@@ -1,0 +1,160 @@
+from flask import Blueprint, jsonify
+import os
+import pymysql
+from dotenv import load_dotenv
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+load_dotenv(os.path.join(BASE_DIR, ".env"))
+
+dashboard_api = Blueprint("dashboard_api", __name__, url_prefix="/api/dashboard")
+
+
+def get_connection():
+    return pymysql.connect(
+        host=os.getenv("DB_HOST", "127.0.0.1"),
+        port=int(os.getenv("DB_PORT", "3306")),
+        user=os.getenv("DB_USER", "attendance_app"),
+        password=os.getenv("DB_PASSWORD", "AttendX_DB_2006!"),
+        database=os.getenv("DB_NAME", "student_attendance"),
+        cursorclass=pymysql.cursors.DictCursor,
+        autocommit=True
+    )
+
+
+@dashboard_api.route("/stats")
+def stats():
+    connection = get_connection()
+
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT COUNT(*) AS total FROM students")
+            students = cursor.fetchone()["total"]
+
+            cursor.execute("SELECT COUNT(*) AS total FROM faculty")
+            faculty = cursor.fetchone()["total"]
+
+            cursor.execute("SELECT COUNT(*) AS total FROM classes")
+            classes = cursor.fetchone()["total"]
+
+            cursor.execute("SELECT COUNT(*) AS total FROM subjects")
+            subjects = cursor.fetchone()["total"]
+
+            cursor.execute("""
+                SELECT
+                    COUNT(*) AS total,
+                    COALESCE(
+                        ROUND(
+                            SUM(status = 'PRESENT') / NULLIF(COUNT(*), 0) * 100,
+                            1
+                        ),
+                        0
+                    ) AS percentage
+                FROM attendance
+                WHERE attendance_date = CURDATE()
+            """)
+            attendance = cursor.fetchone()
+
+        return jsonify({
+            "success": True,
+            "students": students,
+            "faculty": faculty,
+            "classes": classes,
+            "subjects": subjects,
+            "attendance_today": float(attendance["percentage"] or 0),
+            "attendance_records_today": attendance["total"]
+        })
+
+    finally:
+        connection.close()
+
+
+@dashboard_api.route("/weekly")
+def weekly():
+    connection = get_connection()
+
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                SELECT
+                    DAYNAME(attendance_date) AS day_name,
+                    ROUND(
+                        SUM(status = 'PRESENT') /
+                        NULLIF(COUNT(*), 0) * 100,
+                        1
+                    ) AS percentage
+                FROM attendance
+                WHERE attendance_date >= CURDATE() - INTERVAL 6 DAY
+                GROUP BY attendance_date, DAYNAME(attendance_date)
+                ORDER BY attendance_date
+            """)
+
+            rows = cursor.fetchall()
+
+        return jsonify({
+            "success": True,
+            "data": rows
+        })
+
+    finally:
+        connection.close()
+
+
+@dashboard_api.route("/activity")
+def activity():
+    connection = get_connection()
+
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                SELECT
+                    al.action,
+                    al.old_status,
+                    al.new_status,
+                    al.created_at,
+                    u.username
+                FROM attendance_logs al
+                LEFT JOIN users u ON u.id = al.user_id
+                ORDER BY al.created_at DESC
+                LIMIT 8
+            """)
+
+            rows = cursor.fetchall()
+
+            for row in rows:
+                if row["created_at"]:
+                    row["created_at"] = row["created_at"].isoformat()
+
+        return jsonify({
+            "success": True,
+            "data": rows
+        })
+
+    finally:
+        connection.close()
+
+
+@dashboard_api.route("/system")
+def system():
+    database = "OFFLINE"
+
+    try:
+        connection = get_connection()
+
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT VERSION() AS version")
+            mysql_version = cursor.fetchone()["version"]
+
+        connection.close()
+        database = "ONLINE"
+
+    except Exception:
+        mysql_version = "Unavailable"
+
+    return jsonify({
+        "success": True,
+        "server": "home-server",
+        "database": database,
+        "mysql_version": mysql_version,
+        "api": "ONLINE",
+        "application": "ONLINE"
+    })

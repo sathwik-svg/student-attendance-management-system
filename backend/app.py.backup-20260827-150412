@@ -1,0 +1,549 @@
+import os
+from functools import wraps
+
+import pymysql
+from flask import (
+    Flask,
+    jsonify,
+    render_template,
+    request,
+    session
+)
+from werkzeug.security import check_password_hash
+from dotenv import load_dotenv
+
+
+# =========================================================
+# CONFIGURATION
+# =========================================================
+
+load_dotenv(".env")
+
+app = Flask(
+    __name__,
+    template_folder="../frontend/templates",
+    static_folder="../frontend/static"
+)
+
+app.secret_key = os.getenv(
+    "SECRET_KEY",
+    "dev-change-this-secret"
+)
+
+
+# =========================================================
+# DATABASE
+# =========================================================
+
+def get_db():
+
+    return pymysql.connect(
+        host=os.getenv("DB_HOST", "127.0.0.1"),
+        port=int(os.getenv("DB_PORT", "3306")),
+        user=os.getenv("DB_USER", "attendance_app"),
+        password=os.getenv(
+            "DB_PASSWORD",
+            "AttendX_DB_2026!"
+        ),
+        database=os.getenv(
+            "DB_NAME",
+            "student_attendance"
+        ),
+        cursorclass=pymysql.cursors.DictCursor,
+        autocommit=True
+    )
+
+
+# =========================================================
+# AUTH HELPERS
+# =========================================================
+
+def login_required(view):
+
+    @wraps(view)
+    def wrapped(*args, **kwargs):
+
+        if "user_id" not in session:
+
+            return jsonify({
+                "success": False,
+                "error": "Authentication required"
+            }), 401
+
+        return view(*args, **kwargs)
+
+    return wrapped
+
+
+def role_required(*allowed_roles):
+
+    def decorator(view):
+
+        @wraps(view)
+        def wrapped(*args, **kwargs):
+
+            if "user_id" not in session:
+
+                return jsonify({
+                    "success": False,
+                    "error": "Authentication required"
+                }), 401
+
+            if session.get("role") not in allowed_roles:
+
+                return jsonify({
+                    "success": False,
+                    "error": "Access denied"
+                }), 403
+
+            return view(*args, **kwargs)
+
+        return wrapped
+
+    return decorator
+
+
+# =========================================================
+# FRONTEND
+# =========================================================
+
+@app.route("/")
+def home():
+
+    return render_template("index.html")
+
+
+# =========================================================
+# HEALTH
+# =========================================================
+
+def get_db_connection():
+    return pymysql.connect(
+        host=os.getenv("DB_HOST", "127.0.0.1"),
+        port=int(os.getenv("DB_PORT", "3306")),
+        user=os.getenv("DB_USER", "attendance_app"),
+        password=os.getenv("DB_PASSWORD", "AttendX_DB_2006!"),
+        database=os.getenv("DB_NAME", "student_attendance"),
+        cursorclass=pymysql.cursors.DictCursor,
+        autocommit=True
+    )
+
+
+@app.route("/api/dashboard/stats")
+def dashboard_stats():
+    try:
+        connection = get_db_connection()
+
+        with connection.cursor() as cursor:
+
+            cursor.execute("SELECT COUNT(*) AS total FROM students")
+            students = cursor.fetchone()["total"]
+
+            cursor.execute("SELECT COUNT(*) AS total FROM faculty")
+            faculty = cursor.fetchone()["total"]
+
+            cursor.execute("SELECT COUNT(*) AS total FROM subjects")
+            subjects = cursor.fetchone()["total"]
+
+            cursor.execute("SELECT COUNT(*) AS total FROM classes")
+            classes = cursor.fetchone()["total"]
+
+            cursor.execute("""
+                SELECT
+                    COUNT(*) AS total,
+                    SUM(status = 'PRESENT') AS present
+                FROM attendance
+            """)
+            attendance = cursor.fetchone()
+
+            total_attendance = attendance["total"] or 0
+            present = attendance["present"] or 0
+
+            percentage = (
+                round((present / total_attendance) * 100, 1)
+                if total_attendance
+                else 0
+            )
+
+            cursor.execute("""
+                SELECT
+                    al.id,
+                    al.action,
+                    al.old_status,
+                    al.new_status,
+                    al.created_at,
+                    u.username,
+                    u.full_name
+                FROM attendance_logs al
+                JOIN users u ON u.id = al.user_id
+                ORDER BY al.created_at DESC
+                LIMIT 8
+            """)
+            logs = cursor.fetchall()
+
+        connection.close()
+
+        for log in logs:
+            if log.get("created_at"):
+                log["created_at"] = log["created_at"].isoformat()
+
+        return jsonify({
+            "success": True,
+            "stats": {
+                "students": students,
+                "faculty": faculty,
+                "subjects": subjects,
+                "classes": classes,
+                "attendance_percentage": percentage,
+                "attendance_records": total_attendance,
+                "present_records": present
+            },
+            "logs": logs
+        })
+
+    except Exception as e:
+        print("Dashboard database error:", e)
+
+        return jsonify({
+            "success": False,
+            "error": "Dashboard data unavailable"
+        }), 500
+
+
+@app.route("/health")
+def health():
+
+    db_status = "unknown"
+
+    try:
+
+        connection = get_db()
+
+        with connection.cursor() as cursor:
+
+            cursor.execute(
+                "SELECT 1 AS ok"
+            )
+
+            cursor.fetchone()
+
+        connection.close()
+
+        db_status = "healthy"
+
+    except Exception as error:
+
+        db_status = "unhealthy"
+
+        print(
+            "Database health check failed:",
+            error
+        )
+
+
+    return jsonify({
+
+        "status": "healthy",
+
+        "application":
+            "Student Attendance Management System",
+
+        "server":
+            "home-server",
+
+        "database":
+            db_status
+
+    })
+
+
+# =========================================================
+# LOGIN
+# =========================================================
+
+@app.post("/api/auth/login")
+def login():
+
+    data = request.get_json(
+        silent=True
+    ) or {}
+
+
+    username = str(
+        data.get("username", "")
+    ).strip()
+
+    password = str(
+        data.get("password", "")
+    )
+
+
+    if not username or not password:
+
+        return jsonify({
+
+            "success": False,
+
+            "error":
+                "Username and password are required"
+
+        }), 400
+
+
+    try:
+
+        connection = get_db()
+
+        with connection.cursor() as cursor:
+
+            cursor.execute(
+                """
+                SELECT
+                    id,
+                    username,
+                    password_hash,
+                    role,
+                    full_name,
+                    email,
+                    is_active
+                FROM users
+                WHERE username = %s
+                LIMIT 1
+                """,
+                (username,)
+            )
+
+            user = cursor.fetchone()
+
+        connection.close()
+
+
+    except Exception as error:
+
+        print(
+            "Login database error:",
+            error
+        )
+
+        return jsonify({
+
+            "success": False,
+
+            "error":
+                "Authentication service unavailable"
+
+        }), 500
+
+
+    if not user:
+
+        return jsonify({
+
+            "success": False,
+
+            "error":
+                "Invalid username or password"
+
+        }), 401
+
+
+    if not user["is_active"]:
+
+        return jsonify({
+
+            "success": False,
+
+            "error":
+                "This account is disabled"
+
+        }), 403
+
+
+    if not check_password_hash(
+        user["password_hash"],
+        password
+    ):
+
+        return jsonify({
+
+            "success": False,
+
+            "error":
+                "Invalid username or password"
+
+        }), 401
+
+
+    session.clear()
+
+    session["user_id"] = user["id"]
+
+    session["username"] = user["username"]
+
+    session["role"] = user["role"]
+
+    session["full_name"] = user["full_name"]
+
+
+    return jsonify({
+
+        "success": True,
+
+        "message":
+            "Login successful",
+
+        "user": {
+
+            "id":
+                user["id"],
+
+            "username":
+                user["username"],
+
+            "full_name":
+                user["full_name"],
+
+            "email":
+                user["email"],
+
+            "role":
+                user["role"]
+
+        }
+
+    })
+
+
+# =========================================================
+# CURRENT USER
+# =========================================================
+
+@app.get("/api/auth/me")
+@login_required
+def current_user():
+
+    return jsonify({
+
+        "success": True,
+
+        "user": {
+
+            "id":
+                session["user_id"],
+
+            "username":
+                session["username"],
+
+            "full_name":
+                session["full_name"],
+
+            "role":
+                session["role"]
+
+        }
+
+    })
+
+
+# =========================================================
+# LOGOUT
+# =========================================================
+
+@app.post("/api/auth/logout")
+def logout():
+
+    session.clear()
+
+    return jsonify({
+
+        "success": True,
+
+        "message":
+            "Logged out successfully"
+
+    })
+
+
+# =========================================================
+# ROLE TEST ENDPOINTS
+# =========================================================
+
+@app.get("/api/student")
+@role_required("STUDENT")
+def student_portal():
+
+    return jsonify({
+
+        "success": True,
+
+        "portal":
+            "student",
+
+        "message":
+            "Student portal access granted"
+
+    })
+
+
+@app.get("/api/faculty")
+@role_required("FACULTY")
+def faculty_portal():
+
+    return jsonify({
+
+        "success": True,
+
+        "portal":
+            "faculty",
+
+        "message":
+            "Faculty portal access granted"
+
+    })
+
+
+@app.get("/api/hod")
+@role_required("HOD")
+def hod_portal():
+
+    return jsonify({
+
+        "success": True,
+
+        "portal":
+            "hod",
+
+        "message":
+            "HOD portal access granted"
+
+    })
+
+
+@app.get("/api/admin")
+@role_required("ADMIN")
+def admin_portal():
+
+    return jsonify({
+
+        "success": True,
+
+        "portal":
+            "admin",
+
+        "message":
+            "Administrator portal access granted"
+
+    })
+
+
+# =========================================================
+# APPLICATION
+# =========================================================
+
+if __name__ == "__main__":
+
+    app.run(
+        host="0.0.0.0",
+        port=5000,
+        debug=True
+    )

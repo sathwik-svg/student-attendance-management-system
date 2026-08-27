@@ -1,0 +1,1095 @@
+"use strict";
+
+
+/* =====================================================
+   ATTENDX V5
+   Interaction + Authentication Engine
+===================================================== */
+
+document.addEventListener("DOMContentLoaded", () => {
+
+
+    /* =================================================
+       ELEMENTS
+    ================================================= */
+
+    const root = document.documentElement;
+
+    const landingPage =
+        document.getElementById("landingPage");
+
+    const dashboardPage =
+        document.getElementById("dashboardPage");
+
+    const loginModal =
+        document.getElementById("loginModal");
+
+    const loginForm =
+        document.getElementById("loginForm");
+
+    const loginError =
+        document.getElementById("loginError");
+
+    const loginButton =
+        document.getElementById("loginButton");
+
+    const usernameInput =
+        document.getElementById("username");
+
+    const passwordInput =
+        document.getElementById("password");
+
+
+    /* =================================================
+       THEME
+    ================================================= */
+
+    const savedTheme =
+        localStorage.getItem("attendx-theme") || "dark";
+
+    root.setAttribute("data-theme", savedTheme);
+
+
+    function updateThemeIcon() {
+
+        const icon =
+            document.getElementById("themeIcon");
+
+        if (!icon) return;
+
+        icon.textContent =
+            root.getAttribute("data-theme") === "dark"
+                ? "☀"
+                : "☾";
+    }
+
+
+    function toggleTheme() {
+
+        const current =
+            root.getAttribute("data-theme");
+
+        const next =
+            current === "dark"
+                ? "light"
+                : "dark";
+
+        root.setAttribute(
+            "data-theme",
+            next
+        );
+
+        localStorage.setItem(
+            "attendx-theme",
+            next
+        );
+
+        updateThemeIcon();
+    }
+
+
+    document
+        .getElementById("themeToggle")
+        ?.addEventListener(
+            "click",
+            toggleTheme
+        );
+
+
+    document
+        .getElementById("dashboardTheme")
+        ?.addEventListener(
+            "click",
+            toggleTheme
+        );
+
+
+    updateThemeIcon();
+
+
+    /* =================================================
+       LOGIN MODAL
+    ================================================= */
+
+    function openLogin() {
+
+        loginModal.classList.add("open");
+
+        loginModal.setAttribute(
+            "aria-hidden",
+            "false"
+        );
+
+        setTimeout(() => {
+            usernameInput?.focus();
+        }, 250);
+    }
+
+
+    function closeLogin() {
+
+        loginModal.classList.remove("open");
+
+        loginModal.setAttribute(
+            "aria-hidden",
+            "true"
+        );
+
+        loginError.textContent = "";
+    }
+
+
+    document
+        .getElementById("openLogin")
+        ?.addEventListener(
+            "click",
+            openLogin
+        );
+
+
+    document
+        .getElementById("heroLogin")
+        ?.addEventListener(
+            "click",
+            openLogin
+        );
+
+
+    document
+        .getElementById("closeLogin")
+        ?.addEventListener(
+            "click",
+            closeLogin
+        );
+
+
+    document
+        .querySelector(".modal-backdrop")
+        ?.addEventListener(
+            "click",
+            closeLogin
+        );
+
+
+    document.addEventListener(
+        "keydown",
+        event => {
+
+            if (
+                event.key === "Escape" &&
+                loginModal.classList.contains("open")
+            ) {
+                closeLogin();
+            }
+
+        }
+    );
+
+
+    /* =================================================
+       PASSWORD VISIBILITY
+    ================================================= */
+
+    document
+        .getElementById("passwordToggle")
+        ?.addEventListener(
+            "click",
+            () => {
+
+                const button =
+                    document.getElementById(
+                        "passwordToggle"
+                    );
+
+                if (
+                    passwordInput.type === "password"
+                ) {
+
+                    passwordInput.type = "text";
+
+                    button.textContent = "Hide";
+
+                } else {
+
+                    passwordInput.type = "password";
+
+                    button.textContent = "Show";
+                }
+
+            }
+        );
+
+
+    /* =================================================
+       LOGIN API
+    ================================================= */
+
+    loginForm?.addEventListener(
+        "submit",
+        async event => {
+
+            event.preventDefault();
+
+            loginError.textContent = "";
+
+            loginButton.disabled = true;
+
+            loginButton.innerHTML = `
+                <span>Authenticating...</span>
+                <b>...</b>
+            `;
+
+
+            const username =
+                usernameInput.value.trim();
+
+            const password =
+                passwordInput.value;
+
+
+            try {
+
+                const response =
+                    await fetch(
+                        "/api/auth/login",
+                        {
+                            method: "POST",
+
+                            headers: {
+                                "Content-Type":
+                                    "application/json"
+                            },
+
+                            credentials: "same-origin",
+
+                            body: JSON.stringify({
+                                username,
+                                password
+                            })
+                        }
+                    );
+
+
+                const data =
+                    await response.json();
+
+
+                if (!response.ok || !data.success) {
+
+                    throw new Error(
+                        data.error ||
+                        "Unable to sign in"
+                    );
+                }
+
+
+                /*
+                 * Store only non-sensitive user
+                 * interface information.
+                 *
+                 * The authentication session
+                 * remains managed by Flask.
+                 */
+
+                sessionStorage.setItem(
+                    "attendx-user",
+                    JSON.stringify(data.user)
+                );
+
+
+                closeLogin();
+
+                showDashboard(data.user);
+
+
+            } catch (error) {
+
+                loginError.textContent =
+                    error.message ||
+                    "Authentication failed.";
+
+            } finally {
+
+                loginButton.disabled = false;
+
+                loginButton.innerHTML = `
+                    <span>Sign in securely</span>
+                    <b>→</b>
+                `;
+            }
+
+        }
+    );
+
+
+    /* =================================================
+       SHOW DASHBOARD
+    ================================================= */
+
+    function showDashboard(user) {
+
+        landingPage.classList.add("hidden");
+
+        dashboardPage.classList.remove("hidden");
+
+        document.body.scrollTop = 0;
+
+        document.documentElement.scrollTop = 0;
+
+
+        const name =
+            document.getElementById(
+                "dashboardName"
+            );
+
+        const role =
+            document.getElementById(
+                "dashboardRole"
+            );
+
+
+        if (name) {
+
+            const displayName =
+                user.full_name ||
+                user.username ||
+                "Administrator";
+
+            name.textContent =
+                displayName.split(" ")[0];
+        }
+
+
+        if (role) {
+
+            role.textContent =
+                user.role || "USER";
+        }
+
+
+        /*
+         * Animate dashboard cards after
+         * the dashboard becomes visible.
+         */
+
+        setTimeout(() => {
+
+            document
+                .querySelectorAll(
+                    "#dashboardPage .reveal"
+                )
+                .forEach(
+                    (element, index) => {
+
+                        setTimeout(
+                            () => {
+                                element.classList.add(
+                                    "visible"
+                                );
+                            },
+                            index * 70
+                        );
+
+                    }
+                );
+
+        }, 50);
+
+    }
+
+
+    /* =================================================
+       SESSION CHECK
+    ================================================= */
+
+    async function restoreSession() {
+
+        try {
+
+            const response =
+                await fetch(
+                    "/api/auth/me",
+                    {
+                        credentials:
+                            "same-origin"
+                    }
+                );
+
+
+            if (!response.ok) {
+                return;
+            }
+
+
+            const data =
+                await response.json();
+
+
+            if (
+                data.success &&
+                data.user
+            ) {
+
+                sessionStorage.setItem(
+                    "attendx-user",
+                    JSON.stringify(data.user)
+                );
+
+                showDashboard(data.user);
+            }
+
+        } catch (error) {
+
+            console.log(
+                "No active AttendX session."
+            );
+        }
+
+    }
+
+
+    restoreSession();
+
+
+    /* =================================================
+       LOGOUT
+    ================================================= */
+
+    document
+        .getElementById("logoutButton")
+        ?.addEventListener(
+            "click",
+            async () => {
+
+                try {
+
+                    await fetch(
+                        "/api/auth/logout",
+                        {
+                            method: "POST",
+                            credentials:
+                                "same-origin"
+                        }
+                    );
+
+                } catch (error) {
+
+                    console.error(error);
+
+                }
+
+
+                sessionStorage.removeItem(
+                    "attendx-user"
+                );
+
+
+                dashboardPage.classList.add(
+                    "hidden"
+                );
+
+                landingPage.classList.remove(
+                    "hidden"
+                );
+
+                window.scrollTo({
+                    top: 0,
+                    behavior: "smooth"
+                });
+
+            }
+        );
+
+
+    /* =================================================
+       CLOCK
+    ================================================= */
+
+    function updateClock() {
+
+        const now =
+            new Date();
+
+
+        const time =
+            now.toLocaleTimeString(
+                [],
+                {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    second: "2-digit"
+                }
+            );
+
+
+        const dashboardTime =
+            document.getElementById(
+                "dashboardTime"
+            );
+
+        const footerTime =
+            document.getElementById(
+                "footerTime"
+            );
+
+
+        if (dashboardTime) {
+            dashboardTime.textContent =
+                time;
+        }
+
+
+        if (footerTime) {
+            footerTime.textContent =
+                time;
+        }
+
+    }
+
+
+    updateClock();
+
+    setInterval(
+        updateClock,
+        1000
+    );
+
+
+    /* =================================================
+       SCROLL REVEAL
+    ================================================= */
+
+    const revealObserver =
+        new IntersectionObserver(
+            entries => {
+
+                entries.forEach(
+                    entry => {
+
+                        if (
+                            !entry.isIntersecting
+                        ) {
+                            return;
+                        }
+
+
+                        entry.target.classList.add(
+                            "visible"
+                        );
+
+
+                        revealObserver.unobserve(
+                            entry.target
+                        );
+
+                    }
+                );
+
+            },
+            {
+                threshold: .12
+            }
+        );
+
+
+    document
+        .querySelectorAll(
+            "#landingPage .reveal"
+        )
+        .forEach(
+            element =>
+                revealObserver.observe(element)
+        );
+
+
+    /* =================================================
+       MOUSE GLOW
+    ================================================= */
+
+    const cursorGlow =
+        document.getElementById(
+            "cursorGlow"
+        );
+
+
+    document.addEventListener(
+        "pointermove",
+        event => {
+
+            if (!cursorGlow) return;
+
+            cursorGlow.style.left =
+                `${event.clientX}px`;
+
+            cursorGlow.style.top =
+                `${event.clientY}px`;
+
+        }
+    );
+
+
+    /* =================================================
+       MAGNETIC BUTTONS
+    ================================================= */
+
+    document
+        .querySelectorAll(".magnetic")
+        .forEach(button => {
+
+            button.addEventListener(
+                "pointermove",
+                event => {
+
+                    const rect =
+                        button.getBoundingClientRect();
+
+                    const x =
+                        event.clientX -
+                        rect.left -
+                        rect.width / 2;
+
+                    const y =
+                        event.clientY -
+                        rect.top -
+                        rect.height / 2;
+
+
+                    button.style.transform =
+                        `translate(
+                            ${x * .12}px,
+                            ${y * .12}px
+                        )`;
+                }
+            );
+
+
+            button.addEventListener(
+                "pointerleave",
+                () => {
+
+                    button.style.transform =
+                        "";
+                }
+            );
+
+        });
+
+
+    /* =================================================
+       3D CARD TILT
+    ================================================= */
+
+    document
+        .querySelectorAll(
+            ".magnetic-card"
+        )
+        .forEach(card => {
+
+            card.addEventListener(
+                "pointermove",
+                event => {
+
+                    const rect =
+                        card.getBoundingClientRect();
+
+                    const x =
+                        (event.clientX -
+                            rect.left) /
+                            rect.width -
+                        .5;
+
+                    const y =
+                        (event.clientY -
+                            rect.top) /
+                            rect.height -
+                        .5;
+
+
+                    card.style.transform =
+                        `perspective(700px)
+                         rotateX(${y * -5}deg)
+                         rotateY(${x * 5}deg)
+                         translateY(-8px)`;
+                }
+            );
+
+
+            card.addEventListener(
+                "pointerleave",
+                () => {
+
+                    card.style.transform =
+                        "";
+                }
+            );
+
+        });
+
+
+    /* =================================================
+       DASHBOARD NAVIGATION
+    ================================================= */
+
+    document
+        .querySelectorAll(".rail-item[data-page]")
+        .forEach(item => {
+
+            item.addEventListener(
+                "click",
+                () => {
+
+                    document
+                        .querySelectorAll(
+                            ".rail-item[data-page]"
+                        )
+                        .forEach(
+                            button =>
+                                button.classList.remove(
+                                    "active"
+                                )
+                        );
+
+
+                    item.classList.add(
+                        "active"
+                    );
+
+
+                    /*
+                     * Module pages will be connected
+                     * to real APIs in the next build.
+                     */
+
+                    const page =
+                        item.dataset.page;
+
+
+                    console.log(
+                        "AttendX module:",
+                        page
+                    );
+
+                }
+            );
+
+        });
+
+
+    /* =================================================
+       CONSOLE BRANDING
+    ================================================= */
+
+    console.log(
+        "%c ATTENDX V5 ",
+        "background:#fff;color:#000;padding:8px 14px;border-radius:20px;font-weight:800;"
+    );
+
+    console.log(
+        "Student Attendance Management System"
+    );
+
+    console.log(
+        "Server: home-server"
+    );
+
+});
+
+
+/* =========================================================
+   ATTENDX PREMIUM MOTION CONTROLLER
+   ========================================================= */
+
+(() => {
+    const progress = document.getElementById("scrollProgress");
+
+    const updateProgress = () => {
+        if (!progress) return;
+
+        const max =
+            document.documentElement.scrollHeight -
+            window.innerHeight;
+
+        const value = max > 0
+            ? (window.scrollY / max) * 100
+            : 0;
+
+        progress.style.width = `${value}%`;
+    };
+
+    window.addEventListener(
+        "scroll",
+        updateProgress,
+        { passive: true }
+    );
+
+    updateProgress();
+
+    /* subtle pointer depth for desktop */
+    const stage = document.querySelector(".hero-stage");
+
+    if (stage && window.matchMedia("(pointer:fine)").matches) {
+        window.addEventListener("pointermove", event => {
+            const x =
+                (event.clientX / window.innerWidth - .5) * 2;
+
+            const y =
+                (event.clientY / window.innerHeight - .5) * 2;
+
+            stage.style.transform =
+                `translate3d(${x * 5}px, ${y * 5}px, 0)
+                 rotateX(${y * -1.5}deg)
+                 rotateY(${x * 1.5}deg)`;
+        });
+
+        window.addEventListener("pointerleave", () => {
+            stage.style.transform = "";
+        });
+    }
+})();
+
+/* =========================================================
+   ATTENDX LIVE COMMAND CENTER
+   ========================================================= */
+
+(() => {
+    const $ = (selector) => document.querySelector(selector);
+
+    async function getJSON(url) {
+        const response = await fetch(url, {
+            credentials: "same-origin",
+            cache: "no-store"
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+
+        return response.json();
+    }
+
+    function animateNumber(element, target, suffix = "") {
+        if (!element) return;
+
+        const value = Number(target) || 0;
+        const start = Number(
+            element.dataset.currentValue || 0
+        );
+
+        const duration = 700;
+        const startTime = performance.now();
+
+        function frame(now) {
+            const progress = Math.min(
+                (now - startTime) / duration,
+                1
+            );
+
+            const eased =
+                1 - Math.pow(1 - progress, 3);
+
+            const current =
+                start + (value - start) * eased;
+
+            element.textContent =
+                `${Math.round(current).toLocaleString()}${suffix}`;
+
+            if (progress < 1) {
+                requestAnimationFrame(frame);
+            }
+        }
+
+        element.dataset.currentValue = value;
+        requestAnimationFrame(frame);
+    }
+
+    async function updateStats() {
+        try {
+            const data =
+                await getJSON("/api/dashboard/stats");
+
+            const cards =
+                document.querySelectorAll(".stat-card strong");
+
+            if (cards[0]) {
+                animateNumber(
+                    cards[0],
+                    data.students
+                );
+            }
+
+            if (cards[1]) {
+                animateNumber(
+                    cards[1],
+                    data.attendance_today,
+                    "%"
+                );
+            }
+
+            if (cards[2]) {
+                animateNumber(
+                    cards[2],
+                    data.classes
+                );
+            }
+
+            const status =
+                document.querySelector(
+                    ".stat-card.highlight strong"
+                );
+
+            if (status) {
+                status.textContent = "ONLINE";
+            }
+
+            document
+                .querySelectorAll(".database-status")
+                .forEach(el => {
+                    el.textContent = "● CONNECTED";
+                });
+
+        } catch (error) {
+            console.error(
+                "AttendX stats error:",
+                error
+            );
+        }
+    }
+
+    async function updateSystem() {
+        try {
+            const data =
+                await getJSON("/api/dashboard/system");
+
+            document
+                .querySelectorAll(
+                    ".system-list > div"
+                )
+                .forEach((item, index) => {
+                    const state = item.querySelector("b");
+
+                    if (state) {
+                        state.textContent =
+                            index === 0
+                                ? data.database
+                                : "ONLINE";
+                    }
+                });
+
+        } catch (error) {
+            console.error(
+                "AttendX system error:",
+                error
+            );
+        }
+    }
+
+    async function updateActivity() {
+        try {
+            const data =
+                await getJSON("/api/dashboard/activity");
+
+            const list =
+                document.querySelector(".activity-list");
+
+            if (!list || !data.success) return;
+
+            if (!data.data.length) {
+                list.innerHTML = `
+                    <div class="empty-activity">
+                        <span>◎</span>
+                        <p>
+                            <strong>No recent attendance events</strong>
+                            <small>Activity will appear here automatically.</small>
+                        </p>
+                    </div>
+                `;
+                return;
+            }
+
+            list.innerHTML = data.data
+                .map((event, index) => `
+                    <div class="activity-live-item">
+                        <span>${String(index + 1).padStart(2, "0")}</span>
+                        <p>
+                            <strong>
+                                ${event.action || "Attendance event"}
+                            </strong>
+                            <small>
+                                ${event.username || "System"} •
+                                ${event.new_status || "Updated"}
+                            </small>
+                        </p>
+                        <time>LIVE</time>
+                    </div>
+                `)
+                .join("");
+
+        } catch (error) {
+            console.error(
+                "AttendX activity error:",
+                error
+            );
+        }
+    }
+
+    function enableCommandCenterMotion() {
+        document
+            .querySelectorAll(
+                ".stat-card, .dash-panel, .feature-card, .portal-node, .role-card"
+            )
+            .forEach(card => {
+
+                card.addEventListener("pointermove", event => {
+                    const rect =
+                        card.getBoundingClientRect();
+
+                    const x =
+                        event.clientX - rect.left;
+
+                    const y =
+                        event.clientY - rect.top;
+
+                    const rotateY =
+                        ((x / rect.width) - 0.5) * 8;
+
+                    const rotateX =
+                        ((y / rect.height) - 0.5) * -8;
+
+                    card.style.transform =
+                        `perspective(900px)
+                         rotateX(${rotateX}deg)
+                         rotateY(${rotateY}deg)
+                         translateY(-5px)`;
+                });
+
+                card.addEventListener("pointerleave", () => {
+                    card.style.transform = "";
+                });
+            });
+    }
+
+    async function refreshDashboard() {
+        await Promise.all([
+            updateStats(),
+            updateSystem(),
+            updateActivity()
+        ]);
+    }
+
+    document.addEventListener(
+        "DOMContentLoaded",
+        () => {
+            enableCommandCenterMotion();
+
+            setTimeout(
+                refreshDashboard,
+                400
+            );
+
+            setInterval(
+                refreshDashboard,
+                10000
+            );
+        }
+    );
+})();

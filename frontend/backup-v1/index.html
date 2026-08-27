@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>AttendX — Student Attendance Management</title>
+
+    <meta
+        name="description"
+        content="Modern student attendance management platform."
+    >
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet"
+    >
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='css/style.css') }}"
+    >
+</head>
+
+<body>
+
+    <!-- Animated background -->
+    <div class="background">
+        <div class="orb orb-one"></div>
+        <div class="orb orb-two"></div>
+        <div class="orb orb-three"></div>
+    </div>
+
+    <!-- Navigation -->
+    <header class="navbar">
+
+        <a href="#" class="logo">
+            <span class="logo-mark">A</span>
+            <span>ATTEND<span class="logo-x">X</span></span>
+        </a>
+
+        <nav class="nav-links">
+            <a href="#features">Features</a>
+            <a href="#analytics">Analytics</a>
+            <a href="#system">System</a>
+        </nav>
+
+        <div class="nav-actions">
+
+            <button
+                class="theme-toggle"
+                id="themeToggle"
+                type="button"
+                aria-label="Switch to bright mode"
+            >
+                <span class="theme-sun">☀</span>
+                <span class="theme-moon">☾</span>
+                <span class="theme-knob"></span>
+            </button>
+
+                <a href="#login" class="nav-button">
+                Sign in
+                <span>↗</span>
+            </a>
+
+        </div>
+
+    </header>
+
+
+    <!-- Hero -->
+    
+<!-- VVIT FLOATING BRAND -->
+<div class="vvit-edge-brand">
+    <div class="vvit-orbit orbit-a"></div>
+    <div class="vvit-orbit orbit-b"></div>
+
+    <div class="vvit-logo-wrap">
+        <img src="{{ url_for('static', filename='images/vvit-logo-cropped.png') }}"
+             alt="VVIT University">
+    </div>
+
+    <div class="vvit-label">
+        VVIT
+        <span>UNIVERSITY</span>
+    </div>
+</div>
+
+
+<!-- LIVE SYSTEM WIDGET -->
+<div class="live-widget">
+    <div class="widget-status">
+        <span class="pulse"></span>
+        LIVE SYSTEM
+    </div>
+
+    <div class="widget-server">
+        <span>home-server</span>
+        <strong>ONLINE</strong>
+    </div>
+
+    <div class="widget-metric">
+        <span>192.168.242.128</span>
+        <span>●</span>
+    </div>
+</div>
+
+
+<!-- SYSTEM ARCHITECTURE -->
+<section class="architecture">
+
+    <div class="architecture-heading">
+        <div class="eyebrow">00 — SYSTEM ARCHITECTURE</div>
+
+        <h2>
+            One system.
+            <span>Every role connected.</span>
+        </h2>
+
+        <p>
+            A centralized attendance platform connecting students,
+            faculty, HODs and administrators through one secure system.
+        </p>
+    </div>
+
+
+    <div class="architecture-map">
+
+        <div class="architecture-node auth-node">
+            <small>CORE</small>
+            <strong>Authentication</strong>
+            <span>Student · Faculty · HOD · Admin</span>
+        </div>
+
+
+        <div class="architecture-branches">
+
+            <div class="architecture-column">
+                <div class="architecture-node role-student">
+                    <small>01</small>
+                    <strong>Student</strong>
+                    <span>View attendance</span>
+                </div>
+
+                <div class="architecture-node">
+                    <strong>Analytics</strong>
+                    <span>Percentage · Shortage</span>
+                </div>
+            </div>
+
+
+            <div class="architecture-column">
+                <div class="architecture-node role-faculty">
+                    <small>02</small>
+                    <strong>Faculty</strong>
+                    <span>Mark attendance</span>
+                </div>
+
+                <div class="architecture-node">
+                    <strong>Live Activity</strong>
+                    <span>Mark · Edit · Monitor</span>
+                </div>
+            </div>
+
+
+            <div class="architecture-column">
+                <div class="architecture-node role-admin">
+                    <small>03</small>
+                    <strong>Admin</strong>
+                    <span>Manage system</span>
+                </div>
+
+                <div class="architecture-node">
+                    <strong>Reports</strong>
+                    <span>Users · Classes · Data</span>
+                </div>
+            </div>
+
+        </div>
+
+
+        <div class="architecture-database">
+
+            <div class="database-core">
+                <div class="database-icon">DB</div>
+
+                <div>
+                    <small>DATA LAYER</small>
+                    <strong>MySQL Database</strong>
+                </div>
+
+                <span class="db-live">● LIVE</span>
+            </div>
+
+        </div>
+
+
+        <div class="monitor-widget">
+            <span>◉</span>
+            Logs + Monitoring
+            <strong>ACTIVE</strong>
+        </div>
+
+    </div>
+
+</section>
+
+<main>
+
+        <section class="hero">
+
+            <div class="hero-content">
+
+                <div class="status-pill">
+                    <span class="pulse"></span>
+                    SYSTEM ONLINE
+                </div>
+
+                <h1>
+                    Attendance,
+                    <span>reimagined.</span>
+                </h1>
+
+                <p class="hero-description">
+                    A modern platform for managing student attendance,
+                    academic insights and institutional reporting.
+                </p>
+
+                <div class="hero-actions">
+
+                    <a href="#login" class="primary-button">
+                        Get started
+                        <span>→</span>
+                    </a>
+
+                    <a href="#features" class="secondary-button">
+                        Explore system
+                    </a>
+
+                </div>
+
+            </div>
+
+
+            <!-- Floating dashboard preview -->
+            <div class="hero-visual">
+
+                <div class="dashboard-card">
+
+                    <div class="card-top">
+
+                        <div>
+                            <small>ATTENDANCE OVERVIEW</small>
+                            <h3>Today's activity</h3>
+                        </div>
+
+                        <div class="live-dot">
+                            <span></span>
+                            Live
+                        </div>
+
+                    </div>
+
+                    <div class="attendance-ring">
+
+                        <div class="ring-inner">
+                            <strong>92.4%</strong>
+                            <small>Attendance</small>
+                        </div>
+
+                    </div>
+
+                    <div class="mini-stats">
+
+                        <div>
+                            <span>Students</span>
+                            <strong>1,240</strong>
+                        </div>
+
+                        <div>
+                            <span>Present</span>
+                            <strong>1,146</strong>
+                        </div>
+
+                        <div>
+                            <span>Absent</span>
+                            <strong>94</strong>
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="floating-card floating-one">
+                    <span>✓</span>
+                    Attendance saved
+                </div>
+
+                <div class="floating-card floating-two">
+                    <span>↗</span>
+                    +4.8% this week
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- Marquee -->
+        <section class="marquee">
+
+            <div class="marquee-track">
+                <span>SMART ATTENDANCE</span>
+                <b>✦</b>
+                <span>REAL-TIME ANALYTICS</span>
+                <b>✦</b>
+                <span>ROLE-BASED ACCESS</span>
+                <b>✦</b>
+                <span>ACADEMIC INSIGHTS</span>
+                <b>✦</b>
+
+                <span>SMART ATTENDANCE</span>
+                <b>✦</b>
+                <span>REAL-TIME ANALYTICS</span>
+                <b>✦</b>
+                <span>ROLE-BASED ACCESS</span>
+                <b>✦</b>
+                <span>ACADEMIC INSIGHTS</span>
+            </div>
+
+        </section>
+
+
+        <!-- Features -->
+        <section class="features" id="features">
+
+            <div class="section-heading">
+
+                <div class="eyebrow">
+                    01 — CORE PLATFORM
+                </div>
+
+                <h2>
+                    Everything you need
+                    <span>in one place.</span>
+                </h2>
+
+            </div>
+
+
+            <div class="feature-grid">
+
+                <article class="feature-card large">
+
+                    <div class="feature-number">01</div>
+
+                    <div class="feature-icon">◉</div>
+
+                    <h3>Smart Attendance</h3>
+
+                    <p>
+                        Faculty can select classes, subjects and dates,
+                        then record student attendance digitally.
+                    </p>
+
+                    <div class="feature-line"></div>
+
+                </article>
+
+
+                <article class="feature-card">
+
+                    <div class="feature-number">02</div>
+
+                    <div class="feature-icon">↗</div>
+
+                    <h3>Live Analytics</h3>
+
+                    <p>
+                        Automatically calculate attendance percentages
+                        and monitor academic participation.
+                    </p>
+
+                    <div class="chart-bars">
+                        <i></i>
+                        <i></i>
+                        <i></i>
+                        <i></i>
+                        <i></i>
+                        <i></i>
+                        <i></i>
+                    </div>
+
+                </article>
+
+
+                <article class="feature-card">
+
+                    <div class="feature-number">03</div>
+
+                    <div class="feature-icon">⌁</div>
+
+                    <h3>Reports</h3>
+
+                    <p>
+                        Generate clear attendance reports for students,
+                        faculty and administrators.
+                    </p>
+
+                    <div class="report-preview">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+
+                </article>
+
+            </div>
+
+        </section>
+
+
+        <!-- Analytics -->
+        <section class="analytics" id="analytics">
+
+            <div class="analytics-panel">
+
+                <div class="analytics-copy">
+
+                    <div class="eyebrow">
+                        02 — INSIGHTS
+                    </div>
+
+                    <h2>
+                        Turn attendance
+                        <span>into insight.</span>
+                    </h2>
+
+                    <p>
+                        Students can monitor subject-wise attendance,
+                        overall percentage and attendance shortage.
+                    </p>
+
+                </div>
+
+
+                <div class="analytics-visual">
+
+                    <div class="chart-header">
+                        <span>Weekly attendance</span>
+                        <strong>92.4%</strong>
+                    </div>
+
+                    <div class="chart">
+
+                        <div class="bar" style="height:45%"></div>
+                        <div class="bar" style="height:62%"></div>
+                        <div class="bar" style="height:54%"></div>
+                        <div class="bar" style="height:78%"></div>
+                        <div class="bar" style="height:68%"></div>
+                        <div class="bar" style="height:91%"></div>
+                        <div class="bar active" style="height:98%"></div>
+
+                    </div>
+
+                    <div class="chart-labels">
+                        <span>Mon</span>
+                        <span>Tue</span>
+                        <span>Wed</span>
+                        <span>Thu</span>
+                        <span>Fri</span>
+                        <span>Sat</span>
+                        <span>Today</span>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- System -->
+        <section class="system-section" id="system">
+
+            <div class="section-heading center">
+
+                <div class="eyebrow">
+                    03 — SYSTEM
+                </div>
+
+                <h2>
+                    Built for every
+                    <span>role.</span>
+                </h2>
+
+            </div>
+
+
+            <div class="roles">
+
+                <div class="role-card">
+                    <small>01</small>
+                    <h3>Student</h3>
+                    <p>View attendance, percentages and shortage.</p>
+                    <span>Explore →</span>
+                </div>
+
+                <div class="role-card">
+                    <small>02</small>
+                    <h3>Faculty</h3>
+                    <p>Record, modify and report attendance.</p>
+                    <span>Explore →</span>
+                </div>
+
+                <div class="role-card">
+                    <small>03</small>
+                    <h3>HOD</h3>
+                    <p>Monitor attendance and view reports.</p>
+                    <span>Explore →</span>
+                </div>
+
+                <div class="role-card">
+                    <small>04</small>
+                    <h3>Administrator</h3>
+                    <p>Manage users, subjects and sections.</p>
+                    <span>Explore →</span>
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- CTA -->
+        <section class="cta" id="login">
+
+            <div class="cta-glow"></div>
+
+            <div class="cta-content">
+
+                <div class="status-pill">
+                    <span class="pulse"></span>
+                    HOME-SERVER ONLINE
+                </div>
+
+                <h2>
+                    Ready to manage
+                    <span>attendance?</span>
+                </h2>
+
+                <a href="#" class="primary-button large-button">
+                    Enter AttendX
+                    <span>→</span>
+                </a>
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <footer>
+
+        <div class="logo">
+            <span class="logo-mark">A</span>
+            ATTEND<span class="logo-x">X</span>
+        </div>
+
+        <span>
+            Student Attendance Management System
+        </span>
+
+        <span>
+            © 2026
+        </span>
+
+    </footer>
+
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+
+</body>
+</html>
