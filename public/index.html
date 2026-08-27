@@ -1,0 +1,1047 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>AttendX — Student Attendance System</title>
+
+    <meta
+        name="description"
+        content="AttendX Student Attendance Management System — VVITU"
+    >
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap"
+        rel="stylesheet"
+    >
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='css/style.css') }}"
+    >
+</head>
+
+<body>
+
+<div class="cursor-glow" id="cursorGlow"></div>
+
+<!-- ATTENDX PREMIUM EDGE SYSTEM -->
+<div class="edge-brand" aria-hidden="true">
+    <div class="edge-brand-glow"></div>
+    <div class="edge-brand-logo">
+        <span>V</span>
+    </div>
+    <div class="edge-brand-line"></div>
+    <div class="edge-brand-text">
+        <span>VVITU</span>
+        <small>ATTENDX</small>
+    </div>
+</div>
+
+<div class="ambient-widget widget-server" aria-hidden="true">
+    <span class="widget-pulse"></span>
+    <div>
+        <small>SERVER</small>
+        <strong>HOME-SERVER</strong>
+    </div>
+</div>
+
+<div class="ambient-widget widget-db" aria-hidden="true">
+    <span class="widget-icon">DB</span>
+    <div>
+        <small>DATABASE</small>
+        <strong>MYSQL • ONLINE</strong>
+    </div>
+</div>
+
+<div class="scroll-progress" id="scrollProgress"></div>
+
+
+<div class="noise"></div>
+
+<div class="background">
+
+    <div class="vvitu-watermark" aria-hidden="true">
+        <div class="vvitu-watermark-ring"></div>
+        <div class="vvitu-watermark-logo">V</div>
+        <div class="vvitu-watermark-text">VVITU</div>
+        <div class="vvitu-watermark-subtitle">
+            VASIREDDY VENKATADRI INSTITUTE OF TECHNOLOGY
+        </div>
+    </div>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+    <div class="grid"></div>
+</div>
+
+<!-- =====================================================
+     LANDING PAGE
+===================================================== -->
+
+<div id="landingPage">
+
+    <header class="topbar">
+
+        <a href="#" class="brand">
+
+            <div class="brand-logo">
+                <span>V</span>
+            </div>
+
+            <div>
+                <strong>ATTEND<span>X</span></strong>
+                <small>VVITU • ATTENDANCE PLATFORM</small>
+            </div>
+
+        </a>
+
+        <nav>
+            <a href="#features">Features</a>
+            <a href="#architecture">Architecture</a>
+            <a href="#roles">Roles</a>
+        </nav>
+
+        <div class="top-actions">
+
+            <button
+                class="theme-button"
+                id="themeToggle"
+                type="button"
+                aria-label="Toggle theme"
+            >
+                <span id="themeIcon">☾</span>
+            </button>
+
+            <button
+                class="button button-small"
+                id="openLogin"
+                type="button"
+            >
+                Sign in
+                <span>↗</span>
+            </button>
+
+        </div>
+
+    </header>
+
+
+    <main>
+
+        <!-- HERO -->
+
+        <section class="hero">
+
+            <div class="hero-copy">
+
+                <div class="eyebrow">
+                    <span class="status-dot"></span>
+                    SYSTEM ONLINE
+                </div>
+
+                <h1>
+                    Attendance,
+                    <span>reimagined.</span>
+                </h1>
+
+                <p>
+                    A modern academic platform for attendance,
+                    analytics, student management and institutional
+                    reporting.
+                </p>
+
+                <div class="hero-buttons">
+
+                    <button
+                        class="button button-primary magnetic"
+                        id="heroLogin"
+                        type="button"
+                    >
+                        Open dashboard
+                        <span>→</span>
+                    </button>
+
+                    <a
+                        class="button button-ghost"
+                        href="#architecture"
+                    >
+                        Explore system
+                    </a>
+
+                </div>
+
+                <div class="hero-meta">
+
+                    <div>
+                        <strong>04</strong>
+                        <span>USER ROLES</span>
+                    </div>
+
+                    <div>
+                        <strong>08</strong>
+                        <span>CORE MODULES</span>
+                    </div>
+
+                    <div>
+                        <strong>24/7</strong>
+                        <span>MONITORING</span>
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- 3D DASHBOARD PREVIEW -->
+
+            <div class="hero-stage">
+
+                <div class="stage-ring ring-1"></div>
+                <div class="stage-ring ring-2"></div>
+
+                <div class="floating-chip chip-top">
+                    <span class="mini-dot"></span>
+                    LIVE DATABASE
+                </div>
+
+                <div class="preview-card">
+
+                    <div class="preview-header">
+
+                        <div>
+                            <small>ATTENDX / OVERVIEW</small>
+                            <h3>Today's activity</h3>
+                        </div>
+
+                        <span class="live-pill">
+                            LIVE
+                        </span>
+
+                    </div>
+
+                    <div class="preview-number">
+                        92.4<span>%</span>
+                    </div>
+
+                    <div class="mini-chart">
+
+                        <span style="height:42%"></span>
+                        <span style="height:65%"></span>
+                        <span style="height:51%"></span>
+                        <span style="height:76%"></span>
+                        <span style="height:63%"></span>
+                        <span style="height:88%"></span>
+                        <span style="height:72%"></span>
+                        <span style="height:94%"></span>
+                        <span style="height:82%"></span>
+                        <span style="height:98%"></span>
+
+                    </div>
+
+                    <div class="preview-footer">
+
+                        <div>
+                            <small>PRESENT</small>
+                            <strong>1,248</strong>
+                        </div>
+
+                        <div>
+                            <small>ABSENT</small>
+                            <strong>103</strong>
+                        </div>
+
+                        <div>
+                            <small>CLASSES</small>
+                            <strong>64</strong>
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <div class="floating-card card-students">
+                    <span class="floating-icon">◉</span>
+                    <div>
+                        <small>STUDENTS</small>
+                        <strong>ACTIVE</strong>
+                    </div>
+                </div>
+
+                <div class="floating-card card-security">
+                    <span class="floating-icon">✓</span>
+                    <div>
+                        <small>SECURITY</small>
+                        <strong>PROTECTED</strong>
+                    </div>
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- FEATURES -->
+
+        <section id="features" class="section">
+
+            <div class="section-heading reveal">
+
+                <div>
+                    <span class="section-label">01 / FEATURES</span>
+
+                    <h2>
+                        Everything your
+                        <span>campus needs.</span>
+                    </h2>
+                </div>
+
+                <p>
+                    Built around the actual attendance workflow:
+                    authentication, classes, attendance, analytics
+                    and reports.
+                </p>
+
+            </div>
+
+
+            <div class="feature-grid">
+
+                <article class="feature-card reveal magnetic-card">
+                    <div class="feature-number">01</div>
+                    <div class="feature-icon">◎</div>
+                    <h3>Smart Attendance</h3>
+                    <p>
+                        Record and monitor attendance with
+                        subject-wise academic tracking.
+                    </p>
+                    <span class="card-arrow">↗</span>
+                </article>
+
+                <article class="feature-card reveal magnetic-card">
+                    <div class="feature-number">02</div>
+                    <div class="feature-icon">◫</div>
+                    <h3>Live Analytics</h3>
+                    <p>
+                        Transform attendance records into clear
+                        academic insights and dashboards.
+                    </p>
+                    <span class="card-arrow">↗</span>
+                </article>
+
+                <article class="feature-card reveal magnetic-card">
+                    <div class="feature-number">03</div>
+                    <div class="feature-icon">⌁</div>
+                    <h3>Role-Based Access</h3>
+                    <p>
+                        Separate experiences for students,
+                        faculty, HODs and administrators.
+                    </p>
+                    <span class="card-arrow">↗</span>
+                </article>
+
+                <article class="feature-card reveal magnetic-card">
+                    <div class="feature-number">04</div>
+                    <div class="feature-icon">▣</div>
+                    <h3>Reports</h3>
+                    <p>
+                        Generate structured attendance reports
+                        for academic monitoring.
+                    </p>
+                    <span class="card-arrow">↗</span>
+                </article>
+
+            </div>
+
+        </section>
+
+
+        <!-- ARCHITECTURE -->
+
+        <section id="architecture" class="section architecture-section">
+
+            <div class="section-heading reveal">
+
+                <div>
+                    <span class="section-label">02 / ARCHITECTURE</span>
+
+                    <h2>
+                        One system.
+                        <span>Four portals.</span>
+                    </h2>
+                </div>
+
+                <p>
+                    A clean application flow from authentication
+                    to role-specific academic operations.
+                </p>
+
+            </div>
+
+
+            <div class="architecture">
+
+                <div class="architecture-node node-auth reveal">
+
+                    <span class="node-icon">⌁</span>
+
+                    <div>
+                        <small>01</small>
+                        <strong>Authentication</strong>
+                        <span>Secure role access</span>
+                    </div>
+
+                </div>
+
+
+                <div class="flow-line"></div>
+
+
+                <div class="portal-grid">
+
+                    <div class="portal-node reveal">
+                        <span>01</span>
+                        <strong>Student</strong>
+                        <small>Attendance • Analytics</small>
+                    </div>
+
+                    <div class="portal-node reveal">
+                        <span>02</span>
+                        <strong>Faculty</strong>
+                        <small>Mark • Edit • Reports</small>
+                    </div>
+
+                    <div class="portal-node reveal">
+                        <span>03</span>
+                        <strong>HOD</strong>
+                        <small>Monitor • Reports</small>
+                    </div>
+
+                    <div class="portal-node reveal">
+                        <span>04</span>
+                        <strong>Admin</strong>
+                        <small>Management • Control</small>
+                    </div>
+
+                </div>
+
+
+                <div class="flow-line"></div>
+
+
+                <div class="database-node reveal">
+
+                    <div class="db-orbit"></div>
+
+                    <span class="node-icon">DB</span>
+
+                    <div>
+                        <small>DATA LAYER</small>
+                        <strong>MySQL Database</strong>
+                        <span class="database-status">
+                            ● CONNECTED
+                        </span>
+                    </div>
+
+                </div>
+
+
+                <div class="monitor-node reveal">
+
+                    <span>◉</span>
+
+                    <div>
+                        <small>SYSTEM MONITORING</small>
+                        <strong>Logs + Activity</strong>
+                    </div>
+
+                    <b>ACTIVE</b>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- ROLES -->
+
+        <section id="roles" class="section">
+
+            <div class="section-heading reveal">
+
+                <div>
+                    <span class="section-label">03 / PORTALS</span>
+
+                    <h2>
+                        Designed for
+                        <span>every role.</span>
+                    </h2>
+                </div>
+
+            </div>
+
+
+            <div class="role-grid">
+
+                <article class="role-card reveal">
+                    <span>STUDENT</span>
+                    <h3>Know your attendance.</h3>
+                    <p>
+                        View subject-wise attendance,
+                        percentage and shortage information.
+                    </p>
+                    <b>01</b>
+                </article>
+
+                <article class="role-card reveal">
+                    <span>FACULTY</span>
+                    <h3>Record it instantly.</h3>
+                    <p>
+                        Select classes, subjects and dates,
+                        then mark or modify attendance.
+                    </p>
+                    <b>02</b>
+                </article>
+
+                <article class="role-card reveal">
+                    <span>HOD</span>
+                    <h3>Monitor the department.</h3>
+                    <p>
+                        Review attendance performance
+                        and academic reports.
+                    </p>
+                    <b>03</b>
+                </article>
+
+                <article class="role-card reveal">
+                    <span>ADMIN</span>
+                    <h3>Control the platform.</h3>
+                    <p>
+                        Manage students, faculty, subjects,
+                        sections and reports.
+                    </p>
+                    <b>04</b>
+                </article>
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <footer class="footer">
+
+        <div>
+            <strong>ATTEND<span>X</span></strong>
+            <small>Student Attendance Management System</small>
+        </div>
+
+        <div>
+            <span>VVITU</span>
+            <span>•</span>
+            <span>HOME-SERVER</span>
+            <span>•</span>
+            <span id="footerTime">--:--:--</span>
+        </div>
+
+    </footer>
+
+</div>
+
+
+<!-- =====================================================
+     LOGIN MODAL
+===================================================== -->
+
+<div
+    class="modal"
+    id="loginModal"
+    aria-hidden="true"
+>
+
+    <div class="modal-backdrop"></div>
+
+    <div class="login-panel">
+
+        <button
+            class="modal-close"
+            id="closeLogin"
+            type="button"
+        >
+            ×
+        </button>
+
+        <div class="login-brand">
+
+            <div class="vvitu-mark">
+                V
+            </div>
+
+            <div>
+                <strong>VVITU</strong>
+                <small>UNIVERSITY PORTAL</small>
+            </div>
+
+        </div>
+
+        <div class="login-heading">
+
+            <span>ATTENDX / SECURE ACCESS</span>
+
+            <h2>
+                Welcome
+                <em>back.</em>
+            </h2>
+
+            <p>
+                Sign in to access your attendance workspace.
+            </p>
+
+        </div>
+
+
+        <form id="loginForm">
+
+            <label>
+                Username
+
+                <div class="input-wrap">
+                    <span>◉</span>
+                    <input
+                        id="username"
+                        name="username"
+                        type="text"
+                        placeholder="Enter username"
+                        autocomplete="username"
+                        required
+                    >
+                </div>
+            </label>
+
+
+            <label>
+                Password
+
+                <div class="input-wrap">
+                    <span>◆</span>
+
+                    <input
+                        id="password"
+                        name="password"
+                        type="password"
+                        placeholder="Enter password"
+                        autocomplete="current-password"
+                        required
+                    >
+
+                    <button
+                        type="button"
+                        class="password-toggle"
+                        id="passwordToggle"
+                    >
+                        Show
+                    </button>
+
+                </div>
+            </label>
+
+
+            <div
+                class="login-error"
+                id="loginError"
+                role="alert"
+            ></div>
+
+
+            <button
+                class="button button-primary login-submit"
+                type="submit"
+                id="loginButton"
+            >
+                <span>Sign in securely</span>
+                <b>→</b>
+            </button>
+
+        </form>
+
+
+        <div class="login-footer">
+
+            <span>
+                ● API ONLINE
+            </span>
+
+            <span>
+                SESSION PROTECTED
+            </span>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- =====================================================
+     DASHBOARD
+===================================================== -->
+
+<div id="dashboardPage" class="dashboard-page hidden">
+
+    <aside class="side-rail">
+
+        <div class="rail-brand">
+            <div class="brand-logo">
+                <span>V</span>
+            </div>
+        </div>
+
+        <nav class="rail-nav">
+
+            <button class="rail-item active" data-page="overview">
+                <span>⌂</span>
+                <small>Overview</small>
+            </button>
+
+            <button class="rail-item" data-page="students">
+                <span>◎</span>
+                <small>Students</small>
+            </button>
+
+            <button class="rail-item" data-page="attendance">
+                <span>✓</span>
+                <small>Attendance</small>
+            </button>
+
+            <button class="rail-item" data-page="reports">
+                <span>▤</span>
+                <small>Reports</small>
+            </button>
+
+            <button class="rail-item" data-page="settings">
+                <span>⚙</span>
+                <small>Settings</small>
+            </button>
+
+        </nav>
+
+        <div class="rail-bottom">
+
+            <button
+                class="rail-item"
+                id="dashboardTheme"
+                type="button"
+            >
+                <span>☾</span>
+                <small>Theme</small>
+            </button>
+
+            <button
+                class="rail-item logout-item"
+                id="logoutButton"
+                type="button"
+            >
+                <span>↪</span>
+                <small>Logout</small>
+            </button>
+
+        </div>
+
+    </aside>
+
+
+    <main class="dashboard-main">
+
+        <header class="dashboard-header">
+
+            <div>
+
+                <span class="section-label">
+                    ATTENDX / ADMIN CONSOLE
+                </span>
+
+                <h1>
+                    Good day,
+                    <span id="dashboardName">
+                        Administrator
+                    </span>.
+                </h1>
+
+            </div>
+
+
+            <div class="dashboard-user">
+
+                <div class="system-time">
+                    <small>LOCAL SYSTEM TIME</small>
+                    <strong id="dashboardTime">
+                        --:--:--
+                    </strong>
+                </div>
+
+                <div class="avatar">
+                    A
+                </div>
+
+            </div>
+
+        </header>
+
+
+        <section class="dashboard-content">
+
+            <div class="dashboard-status reveal">
+
+                <div>
+                    <span class="status-dot"></span>
+                    ALL SYSTEMS OPERATIONAL
+                </div>
+
+                <span>
+                    HOME-SERVER • MYSQL CONNECTED
+                </span>
+
+            </div>
+
+
+            <div class="stats-grid">
+
+                <article class="stat-card reveal">
+
+                    <small>TOTAL STUDENTS</small>
+
+                    <strong>1,351</strong>
+
+                    <span class="stat-trend">
+                        ↗ Academic population
+                    </span>
+
+                </article>
+
+                <article class="stat-card reveal">
+
+                    <small>ATTENDANCE TODAY</small>
+
+                    <strong>92.4%</strong>
+
+                    <span class="stat-trend">
+                        ● Live overview
+                    </span>
+
+                </article>
+
+                <article class="stat-card reveal">
+
+                    <small>CLASSES TODAY</small>
+
+                    <strong>64</strong>
+
+                    <span class="stat-trend">
+                        Scheduled sessions
+                    </span>
+
+                </article>
+
+                <article class="stat-card highlight reveal">
+
+                    <small>SYSTEM STATUS</small>
+
+                    <strong>ONLINE</strong>
+
+                    <span class="stat-trend">
+                        Flask + MySQL
+                    </span>
+
+                </article>
+
+            </div>
+
+
+            <div class="dashboard-grid">
+
+                <article class="dash-panel large reveal">
+
+                    <div class="panel-heading">
+
+                        <div>
+                            <small>ATTENDANCE ANALYTICS</small>
+                            <h2>Weekly activity</h2>
+                        </div>
+
+                        <span class="panel-badge">
+                            LIVE
+                        </span>
+
+                    </div>
+
+
+                    <div class="large-chart">
+
+                        <div class="chart-line"></div>
+
+                        <div class="chart-bars">
+
+                            <i style="height:51%"></i>
+                            <i style="height:67%"></i>
+                            <i style="height:58%"></i>
+                            <i style="height:79%"></i>
+                            <i style="height:72%"></i>
+                            <i style="height:91%"></i>
+                            <i style="height:84%"></i>
+
+                        </div>
+
+                        <div class="chart-labels">
+                            <span>MON</span>
+                            <span>TUE</span>
+                            <span>WED</span>
+                            <span>THU</span>
+                            <span>FRI</span>
+                            <span>SAT</span>
+                            <span>SUN</span>
+                        </div>
+
+                    </div>
+
+                </article>
+
+
+                <article class="dash-panel reveal">
+
+                    <div class="panel-heading">
+                        <div>
+                            <small>SYSTEM</small>
+                            <h2>Live status</h2>
+                        </div>
+                    </div>
+
+                    <div class="system-list">
+
+                        <div>
+                            <span class="service-icon">DB</span>
+                            <p>
+                                <strong>MySQL</strong>
+                                <small>Database</small>
+                            </p>
+                            <b>ONLINE</b>
+                        </div>
+
+                        <div>
+                            <span class="service-icon">API</span>
+                            <p>
+                                <strong>Flask API</strong>
+                                <small>Backend</small>
+                            </p>
+                            <b>ONLINE</b>
+                        </div>
+
+                        <div>
+                            <span class="service-icon">UI</span>
+                            <p>
+                                <strong>AttendX UI</strong>
+                                <small>Frontend</small>
+                            </p>
+                            <b>ONLINE</b>
+                        </div>
+
+                    </div>
+
+                </article>
+
+
+                <article class="dash-panel reveal">
+
+                    <div class="panel-heading">
+                        <div>
+                            <small>ACCESS</small>
+                            <h2>Your role</h2>
+                        </div>
+                    </div>
+
+                    <div class="role-display">
+
+                        <div class="role-orbit">
+                            <span>ADMIN</span>
+                        </div>
+
+                        <strong id="dashboardRole">
+                            ADMIN
+                        </strong>
+
+                        <small>
+                            Full platform management
+                        </small>
+
+                    </div>
+
+                </article>
+
+
+                <article class="dash-panel large reveal">
+
+                    <div class="panel-heading">
+
+                        <div>
+                            <small>RECENT ACTIVITY</small>
+                            <h2>System events</h2>
+                        </div>
+
+                        <span class="panel-badge">
+                            LOGS
+                        </span>
+
+                    </div>
+
+                    <div class="activity-list">
+
+                        <div>
+                            <span>01</span>
+                            <p>
+                                <strong>Authentication service</strong>
+                                <small>Administrator session verified</small>
+                            </p>
+                            <time>NOW</time>
+                        </div>
+
+                        <div>
+                            <span>02</span>
+                            <p>
+                                <strong>Database connection</strong>
+                                <small>MySQL connection healthy</small>
+                            </p>
+                            <time>LIVE</time>
+                        </div>
+
+                        <div>
+                            <span>03</span>
+                            <p>
+                                <strong>Attendance platform</strong>
+                                <small>All core services operational</small>
+                            </p>
+                            <time>LIVE</time>
+                        </div>
+
+                    </div>
+
+                </article>
+
+            </div>
+
+        </section>
+
+    </main>
+
+</div>
+
+
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+
+</body>
+</html>

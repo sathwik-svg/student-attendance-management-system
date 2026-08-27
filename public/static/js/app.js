@@ -1,0 +1,3574 @@
+"use strict";
+
+
+/* =====================================================
+   ATTENDX V5
+   Interaction + Authentication Engine
+===================================================== */
+
+document.addEventListener("DOMContentLoaded", () => {
+
+
+    /* =================================================
+       ELEMENTS
+    ================================================= */
+
+    const root = document.documentElement;
+
+    const landingPage =
+        document.getElementById("landingPage");
+
+    const dashboardPage =
+        document.getElementById("dashboardPage");
+
+    const loginModal =
+        document.getElementById("loginModal");
+
+    const loginForm =
+        document.getElementById("loginForm");
+
+    const loginError =
+        document.getElementById("loginError");
+
+    const loginButton =
+        document.getElementById("loginButton");
+
+    const usernameInput =
+        document.getElementById("username");
+
+    const passwordInput =
+        document.getElementById("password");
+
+
+    /* =================================================
+       THEME
+    ================================================= */
+
+    const savedTheme =
+        localStorage.getItem("attendx-theme") || "dark";
+
+    root.setAttribute("data-theme", savedTheme);
+
+
+    function updateThemeIcon() {
+
+        const icon =
+            document.getElementById("themeIcon");
+
+        if (!icon) return;
+
+        icon.textContent =
+            root.getAttribute("data-theme") === "dark"
+                ? "☀"
+                : "☾";
+    }
+
+
+    function toggleTheme() {
+
+        const current =
+            root.getAttribute("data-theme");
+
+        const next =
+            current === "dark"
+                ? "light"
+                : "dark";
+
+        root.setAttribute(
+            "data-theme",
+            next
+        );
+
+        localStorage.setItem(
+            "attendx-theme",
+            next
+        );
+
+        updateThemeIcon();
+    }
+
+
+    document
+        .getElementById("themeToggle")
+        ?.addEventListener(
+            "click",
+            toggleTheme
+        );
+
+
+    document
+        .getElementById("dashboardTheme")
+        ?.addEventListener(
+            "click",
+            toggleTheme
+        );
+
+
+    updateThemeIcon();
+
+
+    /* =================================================
+       LOGIN MODAL
+    ================================================= */
+
+    function openLogin() {
+
+        loginModal.classList.add("open");
+
+        loginModal.setAttribute(
+            "aria-hidden",
+            "false"
+        );
+
+        setTimeout(() => {
+            usernameInput?.focus();
+        }, 250);
+    }
+
+
+    function closeLogin() {
+
+        loginModal.classList.remove("open");
+
+        loginModal.setAttribute(
+            "aria-hidden",
+            "true"
+        );
+
+        loginError.textContent = "";
+    }
+
+
+    document
+        .getElementById("openLogin")
+        ?.addEventListener(
+            "click",
+            openLogin
+        );
+
+
+    document
+        .getElementById("heroLogin")
+        ?.addEventListener(
+            "click",
+            openLogin
+        );
+
+
+    document
+        .getElementById("closeLogin")
+        ?.addEventListener(
+            "click",
+            closeLogin
+        );
+
+
+    document
+        .querySelector(".modal-backdrop")
+        ?.addEventListener(
+            "click",
+            closeLogin
+        );
+
+
+    document.addEventListener(
+        "keydown",
+        event => {
+
+            if (
+                event.key === "Escape" &&
+                loginModal.classList.contains("open")
+            ) {
+                closeLogin();
+            }
+
+        }
+    );
+
+
+    /* =================================================
+       PASSWORD VISIBILITY
+    ================================================= */
+
+    document
+        .getElementById("passwordToggle")
+        ?.addEventListener(
+            "click",
+            () => {
+
+                const button =
+                    document.getElementById(
+                        "passwordToggle"
+                    );
+
+                if (
+                    passwordInput.type === "password"
+                ) {
+
+                    passwordInput.type = "text";
+
+                    button.textContent = "Hide";
+
+                } else {
+
+                    passwordInput.type = "password";
+
+                    button.textContent = "Show";
+                }
+
+            }
+        );
+
+
+    /* =================================================
+       LOGIN API
+    ================================================= */
+
+    loginForm?.addEventListener(
+        "submit",
+        async event => {
+
+            event.preventDefault();
+
+            loginError.textContent = "";
+
+            loginButton.disabled = true;
+
+            loginButton.innerHTML = `
+                <span>Authenticating...</span>
+                <b>...</b>
+            `;
+
+
+            const username =
+                usernameInput.value.trim();
+
+            const password =
+                passwordInput.value;
+
+
+            try {
+
+                const response =
+                    await fetch(
+                        "/api/auth/login",
+                        {
+                            method: "POST",
+
+                            headers: {
+                                "Content-Type":
+                                    "application/json"
+                            },
+
+                            credentials: "same-origin",
+
+                            body: JSON.stringify({
+                                username,
+                                password
+                            })
+                        }
+                    );
+
+
+                const data =
+                    await response.json();
+
+
+                if (!response.ok || !data.success) {
+
+                    throw new Error(
+                        data.error ||
+                        "Unable to sign in"
+                    );
+                }
+
+
+                /*
+                 * Store only non-sensitive user
+                 * interface information.
+                 *
+                 * The authentication session
+                 * remains managed by Flask.
+                 */
+
+                sessionStorage.setItem(
+                    "attendx-user",
+                    JSON.stringify(data.user)
+                );
+
+
+                closeLogin();
+
+                showDashboard(data.user);
+
+
+            } catch (error) {
+
+                loginError.textContent =
+                    error.message ||
+                    "Authentication failed.";
+
+            } finally {
+
+                loginButton.disabled = false;
+
+                loginButton.innerHTML = `
+                    <span>Sign in securely</span>
+                    <b>→</b>
+                `;
+            }
+
+        }
+    );
+
+
+    /* =================================================
+       SHOW DASHBOARD
+    ================================================= */
+
+    function showDashboard(user) {
+
+        landingPage.classList.add("hidden");
+
+        dashboardPage.classList.remove("hidden");
+
+        document.body.scrollTop = 0;
+
+        document.documentElement.scrollTop = 0;
+
+
+        const name =
+            document.getElementById(
+                "dashboardName"
+            );
+
+        const role =
+            document.getElementById(
+                "dashboardRole"
+            );
+
+
+        if (name) {
+
+            const displayName =
+                user.full_name ||
+                user.username ||
+                "Administrator";
+
+            name.textContent =
+                displayName.split(" ")[0];
+        }
+
+
+        if (role) {
+
+            role.textContent =
+                user.role || "USER";
+        }
+
+
+        /*
+         * Animate dashboard cards after
+         * the dashboard becomes visible.
+         */
+
+        setTimeout(() => {
+
+            document
+                .querySelectorAll(
+                    "#dashboardPage .reveal"
+                )
+                .forEach(
+                    (element, index) => {
+
+                        setTimeout(
+                            () => {
+                                element.classList.add(
+                                    "visible"
+                                );
+                            },
+                            index * 70
+                        );
+
+                    }
+                );
+
+        }, 50);
+
+    }
+
+
+    /* =================================================
+       SESSION CHECK
+    ================================================= */
+
+    async function restoreSession() {
+
+        try {
+
+            const response =
+                await fetch(
+                    "/api/auth/me",
+                    {
+                        credentials:
+                            "same-origin"
+                    }
+                );
+
+
+            if (!response.ok) {
+                return;
+            }
+
+
+            const data =
+                await response.json();
+
+
+            if (
+                data.success &&
+                data.user
+            ) {
+
+                sessionStorage.setItem(
+                    "attendx-user",
+                    JSON.stringify(data.user)
+                );
+
+                showDashboard(data.user);
+            }
+
+        } catch (error) {
+
+            console.log(
+                "No active AttendX session."
+            );
+        }
+
+    }
+
+
+    restoreSession();
+
+
+    /* =================================================
+       LOGOUT
+    ================================================= */
+
+    document
+        .getElementById("logoutButton")
+        ?.addEventListener(
+            "click",
+            async () => {
+
+                try {
+
+                    await fetch(
+                        "/api/auth/logout",
+                        {
+                            method: "POST",
+                            credentials:
+                                "same-origin"
+                        }
+                    );
+
+                } catch (error) {
+
+                    console.error(error);
+
+                }
+
+
+                sessionStorage.removeItem(
+                    "attendx-user"
+                );
+
+
+                dashboardPage.classList.add(
+                    "hidden"
+                );
+
+                landingPage.classList.remove(
+                    "hidden"
+                );
+
+                window.scrollTo({
+                    top: 0,
+                    behavior: "smooth"
+                });
+
+            }
+        );
+
+
+    /* =================================================
+       CLOCK
+    ================================================= */
+
+    function updateClock() {
+
+        const now =
+            new Date();
+
+
+        const time =
+            now.toLocaleTimeString(
+                [],
+                {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    second: "2-digit"
+                }
+            );
+
+
+        const dashboardTime =
+            document.getElementById(
+                "dashboardTime"
+            );
+
+        const footerTime =
+            document.getElementById(
+                "footerTime"
+            );
+
+
+        if (dashboardTime) {
+            dashboardTime.textContent =
+                time;
+        }
+
+
+        if (footerTime) {
+            footerTime.textContent =
+                time;
+        }
+
+    }
+
+
+    updateClock();
+
+    setInterval(
+        updateClock,
+        1000
+    );
+
+
+    /* =================================================
+       SCROLL REVEAL
+    ================================================= */
+
+    const revealObserver =
+        new IntersectionObserver(
+            entries => {
+
+                entries.forEach(
+                    entry => {
+
+                        if (
+                            !entry.isIntersecting
+                        ) {
+                            return;
+                        }
+
+
+                        entry.target.classList.add(
+                            "visible"
+                        );
+
+
+                        revealObserver.unobserve(
+                            entry.target
+                        );
+
+                    }
+                );
+
+            },
+            {
+                threshold: .12
+            }
+        );
+
+
+    document
+        .querySelectorAll(
+            "#landingPage .reveal"
+        )
+        .forEach(
+            element =>
+                revealObserver.observe(element)
+        );
+
+
+    /* =================================================
+       MOUSE GLOW
+    ================================================= */
+
+    const cursorGlow =
+        document.getElementById(
+            "cursorGlow"
+        );
+
+
+    document.addEventListener(
+        "pointermove",
+        event => {
+
+            if (!cursorGlow) return;
+
+            cursorGlow.style.left =
+                `${event.clientX}px`;
+
+            cursorGlow.style.top =
+                `${event.clientY}px`;
+
+        }
+    );
+
+
+    /* =================================================
+       MAGNETIC BUTTONS
+    ================================================= */
+
+    document
+        .querySelectorAll(".magnetic")
+        .forEach(button => {
+
+            button.addEventListener(
+                "pointermove",
+                event => {
+
+                    const rect =
+                        button.getBoundingClientRect();
+
+                    const x =
+                        event.clientX -
+                        rect.left -
+                        rect.width / 2;
+
+                    const y =
+                        event.clientY -
+                        rect.top -
+                        rect.height / 2;
+
+
+                    button.style.transform =
+                        `translate(
+                            ${x * .12}px,
+                            ${y * .12}px
+                        )`;
+                }
+            );
+
+
+            button.addEventListener(
+                "pointerleave",
+                () => {
+
+                    button.style.transform =
+                        "";
+                }
+            );
+
+        });
+
+
+    /* =================================================
+       3D CARD TILT
+    ================================================= */
+
+    document
+        .querySelectorAll(
+            ".magnetic-card"
+        )
+        .forEach(card => {
+
+            card.addEventListener(
+                "pointermove",
+                event => {
+
+                    const rect =
+                        card.getBoundingClientRect();
+
+                    const x =
+                        (event.clientX -
+                            rect.left) /
+                            rect.width -
+                        .5;
+
+                    const y =
+                        (event.clientY -
+                            rect.top) /
+                            rect.height -
+                        .5;
+
+
+                    card.style.transform =
+                        `perspective(700px)
+                         rotateX(${y * -5}deg)
+                         rotateY(${x * 5}deg)
+                         translateY(-8px)`;
+                }
+            );
+
+
+            card.addEventListener(
+                "pointerleave",
+                () => {
+
+                    card.style.transform =
+                        "";
+                }
+            );
+
+        });
+
+
+    /* =================================================
+       DASHBOARD NAVIGATION
+    ================================================= */
+
+    document
+        .querySelectorAll(".rail-item[data-page]")
+        .forEach(item => {
+
+            item.addEventListener(
+                "click",
+                () => {
+
+                    document
+                        .querySelectorAll(
+                            ".rail-item[data-page]"
+                        )
+                        .forEach(
+                            button =>
+                                button.classList.remove(
+                                    "active"
+                                )
+                        );
+
+
+                    item.classList.add(
+                        "active"
+                    );
+
+
+                    /*
+                     * Module pages will be connected
+                     * to real APIs in the next build.
+                     */
+
+                    const page =
+                        item.dataset.page;
+
+
+                    console.log(
+                        "AttendX module:",
+                        page
+                    );
+
+                }
+            );
+
+        });
+
+
+    /* =================================================
+       CONSOLE BRANDING
+    ================================================= */
+
+    console.log(
+        "%c ATTENDX V5 ",
+        "background:#fff;color:#000;padding:8px 14px;border-radius:20px;font-weight:800;"
+    );
+
+    console.log(
+        "Student Attendance Management System"
+    );
+
+    console.log(
+        "Server: home-server"
+    );
+
+});
+
+
+/* =========================================================
+   ATTENDX PREMIUM MOTION CONTROLLER
+   ========================================================= */
+
+(() => {
+    const progress = document.getElementById("scrollProgress");
+
+    const updateProgress = () => {
+        if (!progress) return;
+
+        const max =
+            document.documentElement.scrollHeight -
+            window.innerHeight;
+
+        const value = max > 0
+            ? (window.scrollY / max) * 100
+            : 0;
+
+        progress.style.width = `${value}%`;
+    };
+
+    window.addEventListener(
+        "scroll",
+        updateProgress,
+        { passive: true }
+    );
+
+    updateProgress();
+
+    /* subtle pointer depth for desktop */
+    const stage = document.querySelector(".hero-stage");
+
+    if (stage && window.matchMedia("(pointer:fine)").matches) {
+        window.addEventListener("pointermove", event => {
+            const x =
+                (event.clientX / window.innerWidth - .5) * 2;
+
+            const y =
+                (event.clientY / window.innerHeight - .5) * 2;
+
+            stage.style.transform =
+                `translate3d(${x * 5}px, ${y * 5}px, 0)
+                 rotateX(${y * -1.5}deg)
+                 rotateY(${x * 1.5}deg)`;
+        });
+
+        window.addEventListener("pointerleave", () => {
+            stage.style.transform = "";
+        });
+    }
+})();
+
+/* =========================================================
+   ATTENDX LIVE COMMAND CENTER
+   ========================================================= */
+
+(() => {
+    const $ = (selector) => document.querySelector(selector);
+
+    async function getJSON(url) {
+        const response = await fetch(url, {
+            credentials: "same-origin",
+            cache: "no-store"
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+
+        return response.json();
+    }
+
+    function animateNumber(element, target, suffix = "") {
+        if (!element) return;
+
+        const value = Number(target) || 0;
+        const start = Number(
+            element.dataset.currentValue || 0
+        );
+
+        const duration = 700;
+        const startTime = performance.now();
+
+        function frame(now) {
+            const progress = Math.min(
+                (now - startTime) / duration,
+                1
+            );
+
+            const eased =
+                1 - Math.pow(1 - progress, 3);
+
+            const current =
+                start + (value - start) * eased;
+
+            element.textContent =
+                `${Math.round(current).toLocaleString()}${suffix}`;
+
+            if (progress < 1) {
+                requestAnimationFrame(frame);
+            }
+        }
+
+        element.dataset.currentValue = value;
+        requestAnimationFrame(frame);
+    }
+
+    async function updateStats() {
+        try {
+            const data =
+                await getJSON("/api/dashboard/stats");
+
+            const cards =
+                document.querySelectorAll(".stat-card strong");
+
+            if (cards[0]) {
+                animateNumber(
+                    cards[0],
+                    data.students
+                );
+            }
+
+            if (cards[1]) {
+                animateNumber(
+                    cards[1],
+                    data.attendance_today,
+                    "%"
+                );
+            }
+
+            if (cards[2]) {
+                animateNumber(
+                    cards[2],
+                    data.classes
+                );
+            }
+
+            const status =
+                document.querySelector(
+                    ".stat-card.highlight strong"
+                );
+
+            if (status) {
+                status.textContent = "ONLINE";
+            }
+
+            document
+                .querySelectorAll(".database-status")
+                .forEach(el => {
+                    el.textContent = "● CONNECTED";
+                });
+
+        } catch (error) {
+            console.error(
+                "AttendX stats error:",
+                error
+            );
+        }
+    }
+
+    async function updateSystem() {
+        try {
+            const data =
+                await getJSON("/api/dashboard/system");
+
+            document
+                .querySelectorAll(
+                    ".system-list > div"
+                )
+                .forEach((item, index) => {
+                    const state = item.querySelector("b");
+
+                    if (state) {
+                        state.textContent =
+                            index === 0
+                                ? data.database
+                                : "ONLINE";
+                    }
+                });
+
+        } catch (error) {
+            console.error(
+                "AttendX system error:",
+                error
+            );
+        }
+    }
+
+    async function updateActivity() {
+        try {
+            const data =
+                await getJSON("/api/dashboard/activity");
+
+            const list =
+                document.querySelector(".activity-list");
+
+            if (!list || !data.success) return;
+
+            if (!data.data.length) {
+                list.innerHTML = `
+                    <div class="empty-activity">
+                        <span>◎</span>
+                        <p>
+                            <strong>No recent attendance events</strong>
+                            <small>Activity will appear here automatically.</small>
+                        </p>
+                    </div>
+                `;
+                return;
+            }
+
+            list.innerHTML = data.data
+                .map((event, index) => `
+                    <div class="activity-live-item">
+                        <span>${String(index + 1).padStart(2, "0")}</span>
+                        <p>
+                            <strong>
+                                ${event.action || "Attendance event"}
+                            </strong>
+                            <small>
+                                ${event.username || "System"} •
+                                ${event.new_status || "Updated"}
+                            </small>
+                        </p>
+                        <time>LIVE</time>
+                    </div>
+                `)
+                .join("");
+
+        } catch (error) {
+            console.error(
+                "AttendX activity error:",
+                error
+            );
+        }
+    }
+
+    function enableCommandCenterMotion() {
+        document
+            .querySelectorAll(
+                ".stat-card, .dash-panel, .feature-card, .portal-node, .role-card"
+            )
+            .forEach(card => {
+
+                card.addEventListener("pointermove", event => {
+                    const rect =
+                        card.getBoundingClientRect();
+
+                    const x =
+                        event.clientX - rect.left;
+
+                    const y =
+                        event.clientY - rect.top;
+
+                    const rotateY =
+                        ((x / rect.width) - 0.5) * 8;
+
+                    const rotateX =
+                        ((y / rect.height) - 0.5) * -8;
+
+                    card.style.transform =
+                        `perspective(900px)
+                         rotateX(${rotateX}deg)
+                         rotateY(${rotateY}deg)
+                         translateY(-5px)`;
+                });
+
+                card.addEventListener("pointerleave", () => {
+                    card.style.transform = "";
+                });
+            });
+    }
+
+    async function refreshDashboard() {
+        await Promise.all([
+            updateStats(),
+            updateSystem(),
+            updateActivity()
+        ]);
+    }
+
+    document.addEventListener(
+        "DOMContentLoaded",
+        () => {
+            enableCommandCenterMotion();
+
+            setTimeout(
+                refreshDashboard,
+                400
+            );
+
+            setInterval(
+                refreshDashboard,
+                10000
+            );
+        }
+    );
+})();
+
+/* =========================================================
+   ATTENDX FINAL LIVE COMMAND CENTER
+========================================================= */
+
+(function () {
+    "use strict";
+
+    const $ = (selector) => document.querySelector(selector);
+
+    async function api(url, options = {}) {
+        const response = await fetch(url, {
+            credentials: "same-origin",
+            headers: {
+                "Content-Type": "application/json",
+                ...(options.headers || {})
+            },
+            ...options
+        });
+
+        const data = await response.json().catch(() => ({
+            success: false,
+            error: "Invalid server response"
+        }));
+
+        if (!response.ok) {
+            throw new Error(data.error || `HTTP ${response.status}`);
+        }
+
+        return data;
+    }
+
+    async function loadLiveStats() {
+        try {
+            const data = await api("/api/dashboard/stats");
+
+            const cards = document.querySelectorAll(".stat-card strong");
+
+            if (cards.length >= 4) {
+                cards[0].textContent = data.students ?? 0;
+                cards[1].textContent =
+                    `${Number(data.attendance_today ?? 0).toFixed(1)}%`;
+                cards[2].textContent = data.classes ?? 0;
+                cards[3].textContent = "ONLINE";
+            }
+        } catch (error) {
+            console.warn("Live statistics unavailable:", error.message);
+        }
+    }
+
+    async function loadSystemStatus() {
+        try {
+            const data = await api("/api/dashboard/system");
+
+            const status = document.querySelector(".dashboard-status");
+
+            if (status) {
+                status.innerHTML = `
+                    <div>
+                        <span class="status-dot"></span>
+                        ALL SYSTEMS OPERATIONAL
+                    </div>
+                    <span>
+                        ${data.server || "home-server"} •
+                        ${data.database || "MYSQL"} CONNECTED
+                    </span>
+                `;
+            }
+        } catch (error) {
+            console.warn("System status unavailable:", error.message);
+        }
+    }
+
+    async function loadActivity() {
+        try {
+            const data = await api("/api/dashboard/activity");
+            const list = document.querySelector(".activity-list");
+
+            if (!list || !Array.isArray(data.data)) return;
+
+            if (!data.data.length) {
+                list.innerHTML = `
+                    <div>
+                        <span>--</span>
+                        <p>
+                            <strong>No activity yet</strong>
+                            <small>Attendance events will appear here.</small>
+                        </p>
+                        <time>WAITING</time>
+                    </div>
+                `;
+                return;
+            }
+
+            list.innerHTML = data.data.map((item, index) => `
+                <div>
+                    <span>${String(index + 1).padStart(2, "0")}</span>
+                    <p>
+                        <strong>${item.action || "SYSTEM EVENT"}</strong>
+                        <small>
+                            ${item.username || "system"}
+                            ${item.new_status ? " • " + item.new_status : ""}
+                        </small>
+                    </p>
+                    <time>${item.created_at ? new Date(item.created_at).toLocaleTimeString() : "LIVE"}</time>
+                </div>
+            `).join("");
+        } catch (error) {
+            console.warn("Activity unavailable:", error.message);
+        }
+    }
+
+    function createCommandCenter() {
+        const content = document.querySelector(".dashboard-content");
+
+        if (!content || document.getElementById("attendxCommandCenter")) {
+            return;
+        }
+
+        const panel = document.createElement("section");
+        panel.id = "attendxCommandCenter";
+        panel.className = "attendx-command-center";
+
+        panel.innerHTML = `
+            <div class="ax-command-head">
+                <div>
+                    <span>ATTENDX / CONTROL PLANE</span>
+                    <h2>Institution command center</h2>
+                    <p>Manage academic data and monitor attendance from one workspace.</p>
+                </div>
+                <div class="ax-live">● LIVE</div>
+            </div>
+
+            <div class="ax-tabs">
+                <button data-ax-tab="overview" class="active">Overview</button>
+                <button data-ax-tab="departments">Departments</button>
+                <button data-ax-tab="classes">Classes</button>
+                <button data-ax-tab="subjects">Subjects</button>
+                <button data-ax-tab="people">People</button>
+                <button data-ax-tab="attendance">Attendance</button>
+                <button data-ax-tab="reports">Reports</button>
+            </div>
+
+            <div id="axPanelBody"></div>
+        `;
+
+        content.appendChild(panel);
+
+        panel.querySelectorAll("[data-ax-tab]").forEach(button => {
+            button.addEventListener("click", () => {
+                panel.querySelectorAll("[data-ax-tab]").forEach(b => b.classList.remove("active"));
+                button.classList.add("active");
+                renderTab(button.dataset.axTab);
+            });
+        });
+
+        renderTab("overview");
+    }
+
+    async function renderTab(tab) {
+        const body = document.getElementById("axPanelBody");
+        if (!body) return;
+
+        body.innerHTML = `
+            <div class="ax-loading">
+                <span class="status-dot"></span>
+                Loading ${tab}...
+            </div>
+        `;
+
+        try {
+            if (tab === "overview") {
+                body.innerHTML = `
+                    <div class="ax-overview-grid">
+                        <div class="ax-mini-card">
+                            <small>DATABASE</small>
+                            <strong>MYSQL 8</strong>
+                            <span>Connected</span>
+                        </div>
+                        <div class="ax-mini-card">
+                            <small>BACKEND</small>
+                            <strong>FLASK</strong>
+                            <span>API operational</span>
+                        </div>
+                        <div class="ax-mini-card">
+                            <small>AUTH</small>
+                            <strong>SESSION</strong>
+                            <span>Protected</span>
+                        </div>
+                        <div class="ax-mini-card">
+                            <small>LOGGING</small>
+                            <strong>ACTIVE</strong>
+                            <span>Attendance events</span>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            if (tab === "departments") {
+                const result = await api("/api/admin/departments");
+
+                body.innerHTML = `
+                    <div class="ax-section-title">
+                        <div>
+                            <small>ACADEMIC STRUCTURE</small>
+                            <h3>Departments</h3>
+                        </div>
+                        <button class="ax-action" id="axAddDepartment">+ Add department</button>
+                    </div>
+
+                    <div class="ax-table">
+                        <div class="ax-row ax-head">
+                            <span>ID</span><span>NAME</span><span>CODE</span>
+                        </div>
+                        ${(result.data || []).map(x => `
+                            <div class="ax-row">
+                                <span>${x.id}</span>
+                                <span>${x.name}</span>
+                                <span>${x.code}</span>
+                            </div>
+                        `).join("") || `
+                            <div class="ax-empty">No departments yet.</div>
+                        `}
+                    </div>
+                `;
+
+                document.getElementById("axAddDepartment")?.addEventListener("click", async () => {
+                    const name = prompt("Department name:");
+                    if (!name) return;
+
+                    const code = prompt("Department code:");
+                    if (!code) return;
+
+                    await api("/api/admin/departments", {
+                        method: "POST",
+                        body: JSON.stringify({ name, code })
+                    });
+
+                    renderTab("departments");
+                    loadLiveStats();
+                });
+
+                return;
+            }
+
+            if (tab === "classes") {
+                const result = await api("/api/admin/classes");
+
+                body.innerHTML = `
+                    <div class="ax-section-title">
+                        <div>
+                            <small>ACADEMIC STRUCTURE</small>
+                            <h3>Classes & Sections</h3>
+                        </div>
+                    </div>
+
+                    <div class="ax-table">
+                        <div class="ax-row ax-head">
+                            <span>NAME</span><span>YEAR</span><span>SEM</span><span>SECTION</span><span>DEPARTMENT</span>
+                        </div>
+                        ${(result.data || []).map(x => `
+                            <div class="ax-row">
+                                <span>${x.name}</span>
+                                <span>${x.year}</span>
+                                <span>${x.semester}</span>
+                                <span>${x.section}</span>
+                                <span>${x.department_code}</span>
+                            </div>
+                        `).join("") || `<div class="ax-empty">No classes yet.</div>`}
+                    </div>
+                `;
+                return;
+            }
+
+            if (tab === "subjects") {
+                const result = await api("/api/admin/subjects");
+
+                body.innerHTML = `
+                    <div class="ax-section-title">
+                        <div>
+                            <small>CURRICULUM</small>
+                            <h3>Subjects</h3>
+                        </div>
+                    </div>
+
+                    <div class="ax-table">
+                        <div class="ax-row ax-head">
+                            <span>CODE</span><span>SUBJECT</span><span>DEPARTMENT</span>
+                        </div>
+                        ${(result.data || []).map(x => `
+                            <div class="ax-row">
+                                <span>${x.code}</span>
+                                <span>${x.name}</span>
+                                <span>${x.department_code}</span>
+                            </div>
+                        `).join("") || `<div class="ax-empty">No subjects yet.</div>`}
+                    </div>
+                `;
+                return;
+            }
+
+            if (tab === "people") {
+                const [students, faculty, users] = await Promise.all([
+                    api("/api/admin/students"),
+                    api("/api/admin/faculty"),
+                    api("/api/admin/users")
+                ]);
+
+                body.innerHTML = `
+                    <div class="ax-overview-grid">
+                        <div class="ax-mini-card">
+                            <small>STUDENTS</small>
+                            <strong>${students.data?.length || 0}</strong>
+                            <span>Registered</span>
+                        </div>
+                        <div class="ax-mini-card">
+                            <small>FACULTY</small>
+                            <strong>${faculty.data?.length || 0}</strong>
+                            <span>Registered</span>
+                        </div>
+                        <div class="ax-mini-card">
+                            <small>USERS</small>
+                            <strong>${users.data?.length || 0}</strong>
+                            <span>All roles</span>
+                        </div>
+                    </div>
+
+                    <div class="ax-table">
+                        <div class="ax-row ax-head">
+                            <span>USER</span><span>NAME</span><span>ROLE</span><span>STATUS</span>
+                        </div>
+                        ${(users.data || []).slice(0, 20).map(x => `
+                            <div class="ax-row">
+                                <span>${x.username}</span>
+                                <span>${x.full_name}</span>
+                                <span>${x.role}</span>
+                                <span>${x.is_active ? "ACTIVE" : "DISABLED"}</span>
+                            </div>
+                        `).join("")}
+                    </div>
+                `;
+                return;
+            }
+
+            if (tab === "attendance") {
+                const report = await api("/api/reports/overview");
+
+                body.innerHTML = `
+                    <div class="ax-overview-grid">
+                        <div class="ax-mini-card">
+                            <small>TOTAL RECORDS</small>
+                            <strong>${report.data?.total_records || 0}</strong>
+                            <span>Attendance entries</span>
+                        </div>
+                        <div class="ax-mini-card">
+                            <small>PRESENT</small>
+                            <strong>${report.data?.present || 0}</strong>
+                            <span>Present records</span>
+                        </div>
+                        <div class="ax-mini-card">
+                            <small>ABSENT</small>
+                            <strong>${report.data?.absent || 0}</strong>
+                            <span>Absent records</span>
+                        </div>
+                        <div class="ax-mini-card">
+                            <small>OVERALL</small>
+                            <strong>${Number(report.data?.percentage || 0).toFixed(1)}%</strong>
+                            <span>Attendance rate</span>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            if (tab === "reports") {
+                body.innerHTML = `
+                    <div class="ax-report-card">
+                        <span class="section-label">REPORT ENGINE</span>
+                        <h3>Attendance reporting is online.</h3>
+                        <p>
+                            Student-wise calculations include classes conducted,
+                            classes attended, absences, percentage and shortage status.
+                        </p>
+                        <div class="ax-report-status">
+                            <span class="status-dot"></span>
+                            REPORT API READY
+                        </div>
+                    </div>
+                `;
+            }
+
+        } catch (error) {
+            body.innerHTML = `
+                <div class="ax-error">
+                    <strong>Unable to load ${tab}</strong>
+                    <span>${error.message}</span>
+                </div>
+            `;
+        }
+    }
+
+    function addCommandCenterStyles() {
+        if (document.getElementById("attendx-final-styles")) return;
+
+        const style = document.createElement("style");
+        style.id = "attendx-final-styles";
+
+        style.textContent = `
+            .attendx-command-center {
+                margin-top: 24px;
+                border: 1px solid rgba(255,255,255,.10);
+                background: rgba(12,12,14,.72);
+                backdrop-filter: blur(24px);
+                border-radius: 24px;
+                padding: 24px;
+                box-shadow: 0 30px 100px rgba(0,0,0,.25);
+            }
+
+            .ax-command-head {
+                display:flex;
+                align-items:flex-start;
+                justify-content:space-between;
+                gap:20px;
+                margin-bottom:22px;
+            }
+
+            .ax-command-head span:first-child {
+                font-size:10px;
+                letter-spacing:.18em;
+                opacity:.55;
+            }
+
+            .ax-command-head h2 {
+                margin:7px 0;
+                font-size:26px;
+            }
+
+            .ax-command-head p {
+                margin:0;
+                opacity:.55;
+                font-size:13px;
+            }
+
+            .ax-live {
+                padding:8px 12px;
+                border:1px solid rgba(255,255,255,.12);
+                border-radius:999px;
+                font-size:10px;
+                letter-spacing:.12em;
+            }
+
+            .ax-tabs {
+                display:flex;
+                flex-wrap:wrap;
+                gap:8px;
+                margin-bottom:22px;
+            }
+
+            .ax-tabs button {
+                border:1px solid rgba(255,255,255,.10);
+                background:rgba(255,255,255,.035);
+                color:inherit;
+                padding:9px 13px;
+                border-radius:10px;
+                cursor:pointer;
+                transition:.2s ease;
+            }
+
+            .ax-tabs button:hover,
+            .ax-tabs button.active {
+                background:rgba(255,255,255,.12);
+                transform:translateY(-1px);
+            }
+
+            .ax-overview-grid {
+                display:grid;
+                grid-template-columns:repeat(4,1fr);
+                gap:12px;
+            }
+
+            .ax-mini-card {
+                padding:20px;
+                min-height:120px;
+                border:1px solid rgba(255,255,255,.08);
+                border-radius:17px;
+                background:rgba(255,255,255,.025);
+            }
+
+            .ax-mini-card small {
+                display:block;
+                font-size:9px;
+                letter-spacing:.15em;
+                opacity:.5;
+                margin-bottom:12px;
+            }
+
+            .ax-mini-card strong {
+                display:block;
+                font-size:24px;
+                margin-bottom:6px;
+            }
+
+            .ax-mini-card span {
+                font-size:11px;
+                opacity:.45;
+            }
+
+            .ax-section-title {
+                display:flex;
+                justify-content:space-between;
+                align-items:center;
+                margin-bottom:15px;
+            }
+
+            .ax-section-title small {
+                font-size:9px;
+                letter-spacing:.14em;
+                opacity:.45;
+            }
+
+            .ax-section-title h3 {
+                margin-top:4px;
+            }
+
+            .ax-action {
+                border:1px solid rgba(255,255,255,.12);
+                background:rgba(255,255,255,.08);
+                color:inherit;
+                padding:9px 13px;
+                border-radius:10px;
+                cursor:pointer;
+            }
+
+            .ax-table {
+                border:1px solid rgba(255,255,255,.08);
+                border-radius:15px;
+                overflow:hidden;
+            }
+
+            .ax-row {
+                display:grid;
+                grid-template-columns:repeat(3,1fr);
+                gap:12px;
+                padding:13px 15px;
+                border-bottom:1px solid rgba(255,255,255,.06);
+                font-size:12px;
+            }
+
+            .ax-row:last-child {
+                border-bottom:0;
+            }
+
+            .ax-row.ax-head {
+                font-size:9px;
+                letter-spacing:.12em;
+                opacity:.5;
+            }
+
+            .ax-empty,
+            .ax-loading {
+                padding:28px;
+                text-align:center;
+                opacity:.5;
+                font-size:12px;
+            }
+
+            .ax-report-card {
+                padding:28px;
+                border:1px solid rgba(255,255,255,.08);
+                border-radius:18px;
+                background:rgba(255,255,255,.025);
+            }
+
+            .ax-report-card h3 {
+                margin:10px 0;
+                font-size:22px;
+            }
+
+            .ax-report-card p {
+                max-width:700px;
+                opacity:.55;
+                line-height:1.7;
+            }
+
+            .ax-report-status {
+                margin-top:20px;
+                display:flex;
+                align-items:center;
+                gap:8px;
+                font-size:10px;
+                letter-spacing:.1em;
+            }
+
+            .ax-error {
+                padding:22px;
+                border:1px solid rgba(255,80,80,.2);
+                border-radius:15px;
+                display:flex;
+                flex-direction:column;
+                gap:7px;
+            }
+
+            .ax-error span {
+                opacity:.55;
+                font-size:12px;
+            }
+
+            @media(max-width:800px) {
+                .ax-overview-grid {
+                    grid-template-columns:repeat(2,1fr);
+                }
+
+                .ax-command-head {
+                    flex-direction:column;
+                }
+            }
+
+            @media(max-width:520px) {
+                .ax-overview-grid {
+                    grid-template-columns:1fr;
+                }
+
+                .ax-row {
+                    grid-template-columns:1fr;
+                    gap:4px;
+                }
+            }
+        `;
+
+        document.head.appendChild(style);
+    }
+
+    async function initFinalAttendX() {
+        addCommandCenterStyles();
+
+        await loadLiveStats();
+        await loadSystemStatus();
+        await loadActivity();
+
+        createCommandCenter();
+
+        setInterval(() => {
+            loadLiveStats();
+            loadSystemStatus();
+            loadActivity();
+        }, 15000);
+    }
+
+    /*
+       Wait until the existing application has authenticated
+       and revealed the dashboard.
+    */
+    const observer = new MutationObserver(() => {
+        const dashboard = document.getElementById("dashboardPage");
+
+        if (
+            dashboard &&
+            !dashboard.classList.contains("hidden") &&
+            !window.__attendxFinalInitialized
+        ) {
+            window.__attendxFinalInitialized = true;
+            initFinalAttendX();
+        }
+    });
+
+    observer.observe(document.body, {
+        subtree: true,
+        attributes: true,
+        attributeFilter: ["class"]
+    });
+
+})();
+
+/* =========================================================
+   ATTENDX FINAL LIVE COMMAND CENTER
+========================================================= */
+
+(function () {
+    "use strict";
+
+    const $ = (selector) => document.querySelector(selector);
+
+    async function api(url, options = {}) {
+        const response = await fetch(url, {
+            credentials: "same-origin",
+            headers: {
+                "Content-Type": "application/json",
+                ...(options.headers || {})
+            },
+            ...options
+        });
+
+        const data = await response.json().catch(() => ({
+            success: false,
+            error: "Invalid server response"
+        }));
+
+        if (!response.ok) {
+            throw new Error(data.error || `HTTP ${response.status}`);
+        }
+
+        return data;
+    }
+
+    async function loadLiveStats() {
+        try {
+            const data = await api("/api/dashboard/stats");
+
+            const cards = document.querySelectorAll(".stat-card strong");
+
+            if (cards.length >= 4) {
+                cards[0].textContent = data.students ?? 0;
+                cards[1].textContent =
+                    `${Number(data.attendance_today ?? 0).toFixed(1)}%`;
+                cards[2].textContent = data.classes ?? 0;
+                cards[3].textContent = "ONLINE";
+            }
+        } catch (error) {
+            console.warn("Live statistics unavailable:", error.message);
+        }
+    }
+
+    async function loadSystemStatus() {
+        try {
+            const data = await api("/api/dashboard/system");
+
+            const status = document.querySelector(".dashboard-status");
+
+            if (status) {
+                status.innerHTML = `
+                    <div>
+                        <span class="status-dot"></span>
+                        ALL SYSTEMS OPERATIONAL
+                    </div>
+                    <span>
+                        ${data.server || "home-server"} •
+                        ${data.database || "MYSQL"} CONNECTED
+                    </span>
+                `;
+            }
+        } catch (error) {
+            console.warn("System status unavailable:", error.message);
+        }
+    }
+
+    async function loadActivity() {
+        try {
+            const data = await api("/api/dashboard/activity");
+            const list = document.querySelector(".activity-list");
+
+            if (!list || !Array.isArray(data.data)) return;
+
+            if (!data.data.length) {
+                list.innerHTML = `
+                    <div>
+                        <span>--</span>
+                        <p>
+                            <strong>No activity yet</strong>
+                            <small>Attendance events will appear here.</small>
+                        </p>
+                        <time>WAITING</time>
+                    </div>
+                `;
+                return;
+            }
+
+            list.innerHTML = data.data.map((item, index) => `
+                <div>
+                    <span>${String(index + 1).padStart(2, "0")}</span>
+                    <p>
+                        <strong>${item.action || "SYSTEM EVENT"}</strong>
+                        <small>
+                            ${item.username || "system"}
+                            ${item.new_status ? " • " + item.new_status : ""}
+                        </small>
+                    </p>
+                    <time>${item.created_at ? new Date(item.created_at).toLocaleTimeString() : "LIVE"}</time>
+                </div>
+            `).join("");
+        } catch (error) {
+            console.warn("Activity unavailable:", error.message);
+        }
+    }
+
+    function createCommandCenter() {
+        const content = document.querySelector(".dashboard-content");
+
+        if (!content || document.getElementById("attendxCommandCenter")) {
+            return;
+        }
+
+        const panel = document.createElement("section");
+        panel.id = "attendxCommandCenter";
+        panel.className = "attendx-command-center";
+
+        panel.innerHTML = `
+            <div class="ax-command-head">
+                <div>
+                    <span>ATTENDX / CONTROL PLANE</span>
+                    <h2>Institution command center</h2>
+                    <p>Manage academic data and monitor attendance from one workspace.</p>
+                </div>
+                <div class="ax-live">● LIVE</div>
+            </div>
+
+            <div class="ax-tabs">
+                <button data-ax-tab="overview" class="active">Overview</button>
+                <button data-ax-tab="departments">Departments</button>
+                <button data-ax-tab="classes">Classes</button>
+                <button data-ax-tab="subjects">Subjects</button>
+                <button data-ax-tab="people">People</button>
+                <button data-ax-tab="attendance">Attendance</button>
+                <button data-ax-tab="reports">Reports</button>
+            </div>
+
+            <div id="axPanelBody"></div>
+        `;
+
+        content.appendChild(panel);
+
+        panel.querySelectorAll("[data-ax-tab]").forEach(button => {
+            button.addEventListener("click", () => {
+                panel.querySelectorAll("[data-ax-tab]").forEach(b => b.classList.remove("active"));
+                button.classList.add("active");
+                renderTab(button.dataset.axTab);
+            });
+        });
+
+        renderTab("overview");
+    }
+
+    async function renderTab(tab) {
+        const body = document.getElementById("axPanelBody");
+        if (!body) return;
+
+        body.innerHTML = `
+            <div class="ax-loading">
+                <span class="status-dot"></span>
+                Loading ${tab}...
+            </div>
+        `;
+
+        try {
+            if (tab === "overview") {
+                body.innerHTML = `
+                    <div class="ax-overview-grid">
+                        <div class="ax-mini-card">
+                            <small>DATABASE</small>
+                            <strong>MYSQL 8</strong>
+                            <span>Connected</span>
+                        </div>
+                        <div class="ax-mini-card">
+                            <small>BACKEND</small>
+                            <strong>FLASK</strong>
+                            <span>API operational</span>
+                        </div>
+                        <div class="ax-mini-card">
+                            <small>AUTH</small>
+                            <strong>SESSION</strong>
+                            <span>Protected</span>
+                        </div>
+                        <div class="ax-mini-card">
+                            <small>LOGGING</small>
+                            <strong>ACTIVE</strong>
+                            <span>Attendance events</span>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            if (tab === "departments") {
+                const result = await api("/api/admin/departments");
+
+                body.innerHTML = `
+                    <div class="ax-section-title">
+                        <div>
+                            <small>ACADEMIC STRUCTURE</small>
+                            <h3>Departments</h3>
+                        </div>
+                        <button class="ax-action" id="axAddDepartment">+ Add department</button>
+                    </div>
+
+                    <div class="ax-table">
+                        <div class="ax-row ax-head">
+                            <span>ID</span><span>NAME</span><span>CODE</span>
+                        </div>
+                        ${(result.data || []).map(x => `
+                            <div class="ax-row">
+                                <span>${x.id}</span>
+                                <span>${x.name}</span>
+                                <span>${x.code}</span>
+                            </div>
+                        `).join("") || `
+                            <div class="ax-empty">No departments yet.</div>
+                        `}
+                    </div>
+                `;
+
+                document.getElementById("axAddDepartment")?.addEventListener("click", async () => {
+                    const name = prompt("Department name:");
+                    if (!name) return;
+
+                    const code = prompt("Department code:");
+                    if (!code) return;
+
+                    await api("/api/admin/departments", {
+                        method: "POST",
+                        body: JSON.stringify({ name, code })
+                    });
+
+                    renderTab("departments");
+                    loadLiveStats();
+                });
+
+                return;
+            }
+
+            if (tab === "classes") {
+                const result = await api("/api/admin/classes");
+
+                body.innerHTML = `
+                    <div class="ax-section-title">
+                        <div>
+                            <small>ACADEMIC STRUCTURE</small>
+                            <h3>Classes & Sections</h3>
+                        </div>
+                    </div>
+
+                    <div class="ax-table">
+                        <div class="ax-row ax-head">
+                            <span>NAME</span><span>YEAR</span><span>SEM</span><span>SECTION</span><span>DEPARTMENT</span>
+                        </div>
+                        ${(result.data || []).map(x => `
+                            <div class="ax-row">
+                                <span>${x.name}</span>
+                                <span>${x.year}</span>
+                                <span>${x.semester}</span>
+                                <span>${x.section}</span>
+                                <span>${x.department_code}</span>
+                            </div>
+                        `).join("") || `<div class="ax-empty">No classes yet.</div>`}
+                    </div>
+                `;
+                return;
+            }
+
+            if (tab === "subjects") {
+                const result = await api("/api/admin/subjects");
+
+                body.innerHTML = `
+                    <div class="ax-section-title">
+                        <div>
+                            <small>CURRICULUM</small>
+                            <h3>Subjects</h3>
+                        </div>
+                    </div>
+
+                    <div class="ax-table">
+                        <div class="ax-row ax-head">
+                            <span>CODE</span><span>SUBJECT</span><span>DEPARTMENT</span>
+                        </div>
+                        ${(result.data || []).map(x => `
+                            <div class="ax-row">
+                                <span>${x.code}</span>
+                                <span>${x.name}</span>
+                                <span>${x.department_code}</span>
+                            </div>
+                        `).join("") || `<div class="ax-empty">No subjects yet.</div>`}
+                    </div>
+                `;
+                return;
+            }
+
+            if (tab === "people") {
+                const [students, faculty, users] = await Promise.all([
+                    api("/api/admin/students"),
+                    api("/api/admin/faculty"),
+                    api("/api/admin/users")
+                ]);
+
+                body.innerHTML = `
+                    <div class="ax-overview-grid">
+                        <div class="ax-mini-card">
+                            <small>STUDENTS</small>
+                            <strong>${students.data?.length || 0}</strong>
+                            <span>Registered</span>
+                        </div>
+                        <div class="ax-mini-card">
+                            <small>FACULTY</small>
+                            <strong>${faculty.data?.length || 0}</strong>
+                            <span>Registered</span>
+                        </div>
+                        <div class="ax-mini-card">
+                            <small>USERS</small>
+                            <strong>${users.data?.length || 0}</strong>
+                            <span>All roles</span>
+                        </div>
+                    </div>
+
+                    <div class="ax-table">
+                        <div class="ax-row ax-head">
+                            <span>USER</span><span>NAME</span><span>ROLE</span><span>STATUS</span>
+                        </div>
+                        ${(users.data || []).slice(0, 20).map(x => `
+                            <div class="ax-row">
+                                <span>${x.username}</span>
+                                <span>${x.full_name}</span>
+                                <span>${x.role}</span>
+                                <span>${x.is_active ? "ACTIVE" : "DISABLED"}</span>
+                            </div>
+                        `).join("")}
+                    </div>
+                `;
+                return;
+            }
+
+            if (tab === "attendance") {
+                const report = await api("/api/reports/overview");
+
+                body.innerHTML = `
+                    <div class="ax-overview-grid">
+                        <div class="ax-mini-card">
+                            <small>TOTAL RECORDS</small>
+                            <strong>${report.data?.total_records || 0}</strong>
+                            <span>Attendance entries</span>
+                        </div>
+                        <div class="ax-mini-card">
+                            <small>PRESENT</small>
+                            <strong>${report.data?.present || 0}</strong>
+                            <span>Present records</span>
+                        </div>
+                        <div class="ax-mini-card">
+                            <small>ABSENT</small>
+                            <strong>${report.data?.absent || 0}</strong>
+                            <span>Absent records</span>
+                        </div>
+                        <div class="ax-mini-card">
+                            <small>OVERALL</small>
+                            <strong>${Number(report.data?.percentage || 0).toFixed(1)}%</strong>
+                            <span>Attendance rate</span>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            if (tab === "reports") {
+                body.innerHTML = `
+                    <div class="ax-report-card">
+                        <span class="section-label">REPORT ENGINE</span>
+                        <h3>Attendance reporting is online.</h3>
+                        <p>
+                            Student-wise calculations include classes conducted,
+                            classes attended, absences, percentage and shortage status.
+                        </p>
+                        <div class="ax-report-status">
+                            <span class="status-dot"></span>
+                            REPORT API READY
+                        </div>
+                    </div>
+                `;
+            }
+
+        } catch (error) {
+            body.innerHTML = `
+                <div class="ax-error">
+                    <strong>Unable to load ${tab}</strong>
+                    <span>${error.message}</span>
+                </div>
+            `;
+        }
+    }
+
+    function addCommandCenterStyles() {
+        if (document.getElementById("attendx-final-styles")) return;
+
+        const style = document.createElement("style");
+        style.id = "attendx-final-styles";
+
+        style.textContent = `
+            .attendx-command-center {
+                margin-top: 24px;
+                border: 1px solid rgba(255,255,255,.10);
+                background: rgba(12,12,14,.72);
+                backdrop-filter: blur(24px);
+                border-radius: 24px;
+                padding: 24px;
+                box-shadow: 0 30px 100px rgba(0,0,0,.25);
+            }
+
+            .ax-command-head {
+                display:flex;
+                align-items:flex-start;
+                justify-content:space-between;
+                gap:20px;
+                margin-bottom:22px;
+            }
+
+            .ax-command-head span:first-child {
+                font-size:10px;
+                letter-spacing:.18em;
+                opacity:.55;
+            }
+
+            .ax-command-head h2 {
+                margin:7px 0;
+                font-size:26px;
+            }
+
+            .ax-command-head p {
+                margin:0;
+                opacity:.55;
+                font-size:13px;
+            }
+
+            .ax-live {
+                padding:8px 12px;
+                border:1px solid rgba(255,255,255,.12);
+                border-radius:999px;
+                font-size:10px;
+                letter-spacing:.12em;
+            }
+
+            .ax-tabs {
+                display:flex;
+                flex-wrap:wrap;
+                gap:8px;
+                margin-bottom:22px;
+            }
+
+            .ax-tabs button {
+                border:1px solid rgba(255,255,255,.10);
+                background:rgba(255,255,255,.035);
+                color:inherit;
+                padding:9px 13px;
+                border-radius:10px;
+                cursor:pointer;
+                transition:.2s ease;
+            }
+
+            .ax-tabs button:hover,
+            .ax-tabs button.active {
+                background:rgba(255,255,255,.12);
+                transform:translateY(-1px);
+            }
+
+            .ax-overview-grid {
+                display:grid;
+                grid-template-columns:repeat(4,1fr);
+                gap:12px;
+            }
+
+            .ax-mini-card {
+                padding:20px;
+                min-height:120px;
+                border:1px solid rgba(255,255,255,.08);
+                border-radius:17px;
+                background:rgba(255,255,255,.025);
+            }
+
+            .ax-mini-card small {
+                display:block;
+                font-size:9px;
+                letter-spacing:.15em;
+                opacity:.5;
+                margin-bottom:12px;
+            }
+
+            .ax-mini-card strong {
+                display:block;
+                font-size:24px;
+                margin-bottom:6px;
+            }
+
+            .ax-mini-card span {
+                font-size:11px;
+                opacity:.45;
+            }
+
+            .ax-section-title {
+                display:flex;
+                justify-content:space-between;
+                align-items:center;
+                margin-bottom:15px;
+            }
+
+            .ax-section-title small {
+                font-size:9px;
+                letter-spacing:.14em;
+                opacity:.45;
+            }
+
+            .ax-section-title h3 {
+                margin-top:4px;
+            }
+
+            .ax-action {
+                border:1px solid rgba(255,255,255,.12);
+                background:rgba(255,255,255,.08);
+                color:inherit;
+                padding:9px 13px;
+                border-radius:10px;
+                cursor:pointer;
+            }
+
+            .ax-table {
+                border:1px solid rgba(255,255,255,.08);
+                border-radius:15px;
+                overflow:hidden;
+            }
+
+            .ax-row {
+                display:grid;
+                grid-template-columns:repeat(3,1fr);
+                gap:12px;
+                padding:13px 15px;
+                border-bottom:1px solid rgba(255,255,255,.06);
+                font-size:12px;
+            }
+
+            .ax-row:last-child {
+                border-bottom:0;
+            }
+
+            .ax-row.ax-head {
+                font-size:9px;
+                letter-spacing:.12em;
+                opacity:.5;
+            }
+
+            .ax-empty,
+            .ax-loading {
+                padding:28px;
+                text-align:center;
+                opacity:.5;
+                font-size:12px;
+            }
+
+            .ax-report-card {
+                padding:28px;
+                border:1px solid rgba(255,255,255,.08);
+                border-radius:18px;
+                background:rgba(255,255,255,.025);
+            }
+
+            .ax-report-card h3 {
+                margin:10px 0;
+                font-size:22px;
+            }
+
+            .ax-report-card p {
+                max-width:700px;
+                opacity:.55;
+                line-height:1.7;
+            }
+
+            .ax-report-status {
+                margin-top:20px;
+                display:flex;
+                align-items:center;
+                gap:8px;
+                font-size:10px;
+                letter-spacing:.1em;
+            }
+
+            .ax-error {
+                padding:22px;
+                border:1px solid rgba(255,80,80,.2);
+                border-radius:15px;
+                display:flex;
+                flex-direction:column;
+                gap:7px;
+            }
+
+            .ax-error span {
+                opacity:.55;
+                font-size:12px;
+            }
+
+            @media(max-width:800px) {
+                .ax-overview-grid {
+                    grid-template-columns:repeat(2,1fr);
+                }
+
+                .ax-command-head {
+                    flex-direction:column;
+                }
+            }
+
+            @media(max-width:520px) {
+                .ax-overview-grid {
+                    grid-template-columns:1fr;
+                }
+
+                .ax-row {
+                    grid-template-columns:1fr;
+                    gap:4px;
+                }
+            }
+        `;
+
+        document.head.appendChild(style);
+    }
+
+    async function initFinalAttendX() {
+        addCommandCenterStyles();
+
+        await loadLiveStats();
+        await loadSystemStatus();
+        await loadActivity();
+
+        createCommandCenter();
+
+        setInterval(() => {
+            loadLiveStats();
+            loadSystemStatus();
+            loadActivity();
+        }, 15000);
+    }
+
+    /*
+       Wait until the existing application has authenticated
+       and revealed the dashboard.
+    */
+    const observer = new MutationObserver(() => {
+        const dashboard = document.getElementById("dashboardPage");
+
+        if (
+            dashboard &&
+            !dashboard.classList.contains("hidden") &&
+            !window.__attendxFinalInitialized
+        ) {
+            window.__attendxFinalInitialized = true;
+            initFinalAttendX();
+        }
+    });
+
+    observer.observe(document.body, {
+        subtree: true,
+        attributes: true,
+        attributeFilter: ["class"]
+    });
+
+})();
+
+/* =========================================================
+   ATTENDX FINAL LIVE COMMAND CENTER
+========================================================= */
+
+(function () {
+    "use strict";
+
+    const $ = (selector) => document.querySelector(selector);
+
+    async function api(url, options = {}) {
+        const response = await fetch(url, {
+            credentials: "same-origin",
+            headers: {
+                "Content-Type": "application/json",
+                ...(options.headers || {})
+            },
+            ...options
+        });
+
+        const data = await response.json().catch(() => ({
+            success: false,
+            error: "Invalid server response"
+        }));
+
+        if (!response.ok) {
+            throw new Error(data.error || `HTTP ${response.status}`);
+        }
+
+        return data;
+    }
+
+    async function loadLiveStats() {
+        try {
+            const data = await api("/api/dashboard/stats");
+
+            const cards = document.querySelectorAll(".stat-card strong");
+
+            if (cards.length >= 4) {
+                cards[0].textContent = data.students ?? 0;
+                cards[1].textContent =
+                    `${Number(data.attendance_today ?? 0).toFixed(1)}%`;
+                cards[2].textContent = data.classes ?? 0;
+                cards[3].textContent = "ONLINE";
+            }
+        } catch (error) {
+            console.warn("Live statistics unavailable:", error.message);
+        }
+    }
+
+    async function loadSystemStatus() {
+        try {
+            const data = await api("/api/dashboard/system");
+
+            const status = document.querySelector(".dashboard-status");
+
+            if (status) {
+                status.innerHTML = `
+                    <div>
+                        <span class="status-dot"></span>
+                        ALL SYSTEMS OPERATIONAL
+                    </div>
+                    <span>
+                        ${data.server || "home-server"} •
+                        ${data.database || "MYSQL"} CONNECTED
+                    </span>
+                `;
+            }
+        } catch (error) {
+            console.warn("System status unavailable:", error.message);
+        }
+    }
+
+    async function loadActivity() {
+        try {
+            const data = await api("/api/dashboard/activity");
+            const list = document.querySelector(".activity-list");
+
+            if (!list || !Array.isArray(data.data)) return;
+
+            if (!data.data.length) {
+                list.innerHTML = `
+                    <div>
+                        <span>--</span>
+                        <p>
+                            <strong>No activity yet</strong>
+                            <small>Attendance events will appear here.</small>
+                        </p>
+                        <time>WAITING</time>
+                    </div>
+                `;
+                return;
+            }
+
+            list.innerHTML = data.data.map((item, index) => `
+                <div>
+                    <span>${String(index + 1).padStart(2, "0")}</span>
+                    <p>
+                        <strong>${item.action || "SYSTEM EVENT"}</strong>
+                        <small>
+                            ${item.username || "system"}
+                            ${item.new_status ? " • " + item.new_status : ""}
+                        </small>
+                    </p>
+                    <time>${item.created_at ? new Date(item.created_at).toLocaleTimeString() : "LIVE"}</time>
+                </div>
+            `).join("");
+        } catch (error) {
+            console.warn("Activity unavailable:", error.message);
+        }
+    }
+
+    function createCommandCenter() {
+        const content = document.querySelector(".dashboard-content");
+
+        if (!content || document.getElementById("attendxCommandCenter")) {
+            return;
+        }
+
+        const panel = document.createElement("section");
+        panel.id = "attendxCommandCenter";
+        panel.className = "attendx-command-center";
+
+        panel.innerHTML = `
+            <div class="ax-command-head">
+                <div>
+                    <span>ATTENDX / CONTROL PLANE</span>
+                    <h2>Institution command center</h2>
+                    <p>Manage academic data and monitor attendance from one workspace.</p>
+                </div>
+                <div class="ax-live">● LIVE</div>
+            </div>
+
+            <div class="ax-tabs">
+                <button data-ax-tab="overview" class="active">Overview</button>
+                <button data-ax-tab="departments">Departments</button>
+                <button data-ax-tab="classes">Classes</button>
+                <button data-ax-tab="subjects">Subjects</button>
+                <button data-ax-tab="people">People</button>
+                <button data-ax-tab="attendance">Attendance</button>
+                <button data-ax-tab="reports">Reports</button>
+            </div>
+
+            <div id="axPanelBody"></div>
+        `;
+
+        content.appendChild(panel);
+
+        panel.querySelectorAll("[data-ax-tab]").forEach(button => {
+            button.addEventListener("click", () => {
+                panel.querySelectorAll("[data-ax-tab]").forEach(b => b.classList.remove("active"));
+                button.classList.add("active");
+                renderTab(button.dataset.axTab);
+            });
+        });
+
+        renderTab("overview");
+    }
+
+    async function renderTab(tab) {
+        const body = document.getElementById("axPanelBody");
+        if (!body) return;
+
+        body.innerHTML = `
+            <div class="ax-loading">
+                <span class="status-dot"></span>
+                Loading ${tab}...
+            </div>
+        `;
+
+        try {
+            if (tab === "overview") {
+                body.innerHTML = `
+                    <div class="ax-overview-grid">
+                        <div class="ax-mini-card">
+                            <small>DATABASE</small>
+                            <strong>MYSQL 8</strong>
+                            <span>Connected</span>
+                        </div>
+                        <div class="ax-mini-card">
+                            <small>BACKEND</small>
+                            <strong>FLASK</strong>
+                            <span>API operational</span>
+                        </div>
+                        <div class="ax-mini-card">
+                            <small>AUTH</small>
+                            <strong>SESSION</strong>
+                            <span>Protected</span>
+                        </div>
+                        <div class="ax-mini-card">
+                            <small>LOGGING</small>
+                            <strong>ACTIVE</strong>
+                            <span>Attendance events</span>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            if (tab === "departments") {
+                const result = await api("/api/admin/departments");
+
+                body.innerHTML = `
+                    <div class="ax-section-title">
+                        <div>
+                            <small>ACADEMIC STRUCTURE</small>
+                            <h3>Departments</h3>
+                        </div>
+                        <button class="ax-action" id="axAddDepartment">+ Add department</button>
+                    </div>
+
+                    <div class="ax-table">
+                        <div class="ax-row ax-head">
+                            <span>ID</span><span>NAME</span><span>CODE</span>
+                        </div>
+                        ${(result.data || []).map(x => `
+                            <div class="ax-row">
+                                <span>${x.id}</span>
+                                <span>${x.name}</span>
+                                <span>${x.code}</span>
+                            </div>
+                        `).join("") || `
+                            <div class="ax-empty">No departments yet.</div>
+                        `}
+                    </div>
+                `;
+
+                document.getElementById("axAddDepartment")?.addEventListener("click", async () => {
+                    const name = prompt("Department name:");
+                    if (!name) return;
+
+                    const code = prompt("Department code:");
+                    if (!code) return;
+
+                    await api("/api/admin/departments", {
+                        method: "POST",
+                        body: JSON.stringify({ name, code })
+                    });
+
+                    renderTab("departments");
+                    loadLiveStats();
+                });
+
+                return;
+            }
+
+            if (tab === "classes") {
+                const result = await api("/api/admin/classes");
+
+                body.innerHTML = `
+                    <div class="ax-section-title">
+                        <div>
+                            <small>ACADEMIC STRUCTURE</small>
+                            <h3>Classes & Sections</h3>
+                        </div>
+                    </div>
+
+                    <div class="ax-table">
+                        <div class="ax-row ax-head">
+                            <span>NAME</span><span>YEAR</span><span>SEM</span><span>SECTION</span><span>DEPARTMENT</span>
+                        </div>
+                        ${(result.data || []).map(x => `
+                            <div class="ax-row">
+                                <span>${x.name}</span>
+                                <span>${x.year}</span>
+                                <span>${x.semester}</span>
+                                <span>${x.section}</span>
+                                <span>${x.department_code}</span>
+                            </div>
+                        `).join("") || `<div class="ax-empty">No classes yet.</div>`}
+                    </div>
+                `;
+                return;
+            }
+
+            if (tab === "subjects") {
+                const result = await api("/api/admin/subjects");
+
+                body.innerHTML = `
+                    <div class="ax-section-title">
+                        <div>
+                            <small>CURRICULUM</small>
+                            <h3>Subjects</h3>
+                        </div>
+                    </div>
+
+                    <div class="ax-table">
+                        <div class="ax-row ax-head">
+                            <span>CODE</span><span>SUBJECT</span><span>DEPARTMENT</span>
+                        </div>
+                        ${(result.data || []).map(x => `
+                            <div class="ax-row">
+                                <span>${x.code}</span>
+                                <span>${x.name}</span>
+                                <span>${x.department_code}</span>
+                            </div>
+                        `).join("") || `<div class="ax-empty">No subjects yet.</div>`}
+                    </div>
+                `;
+                return;
+            }
+
+            if (tab === "people") {
+                const [students, faculty, users] = await Promise.all([
+                    api("/api/admin/students"),
+                    api("/api/admin/faculty"),
+                    api("/api/admin/users")
+                ]);
+
+                body.innerHTML = `
+                    <div class="ax-overview-grid">
+                        <div class="ax-mini-card">
+                            <small>STUDENTS</small>
+                            <strong>${students.data?.length || 0}</strong>
+                            <span>Registered</span>
+                        </div>
+                        <div class="ax-mini-card">
+                            <small>FACULTY</small>
+                            <strong>${faculty.data?.length || 0}</strong>
+                            <span>Registered</span>
+                        </div>
+                        <div class="ax-mini-card">
+                            <small>USERS</small>
+                            <strong>${users.data?.length || 0}</strong>
+                            <span>All roles</span>
+                        </div>
+                    </div>
+
+                    <div class="ax-table">
+                        <div class="ax-row ax-head">
+                            <span>USER</span><span>NAME</span><span>ROLE</span><span>STATUS</span>
+                        </div>
+                        ${(users.data || []).slice(0, 20).map(x => `
+                            <div class="ax-row">
+                                <span>${x.username}</span>
+                                <span>${x.full_name}</span>
+                                <span>${x.role}</span>
+                                <span>${x.is_active ? "ACTIVE" : "DISABLED"}</span>
+                            </div>
+                        `).join("")}
+                    </div>
+                `;
+                return;
+            }
+
+            if (tab === "attendance") {
+                const report = await api("/api/reports/overview");
+
+                body.innerHTML = `
+                    <div class="ax-overview-grid">
+                        <div class="ax-mini-card">
+                            <small>TOTAL RECORDS</small>
+                            <strong>${report.data?.total_records || 0}</strong>
+                            <span>Attendance entries</span>
+                        </div>
+                        <div class="ax-mini-card">
+                            <small>PRESENT</small>
+                            <strong>${report.data?.present || 0}</strong>
+                            <span>Present records</span>
+                        </div>
+                        <div class="ax-mini-card">
+                            <small>ABSENT</small>
+                            <strong>${report.data?.absent || 0}</strong>
+                            <span>Absent records</span>
+                        </div>
+                        <div class="ax-mini-card">
+                            <small>OVERALL</small>
+                            <strong>${Number(report.data?.percentage || 0).toFixed(1)}%</strong>
+                            <span>Attendance rate</span>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            if (tab === "reports") {
+                body.innerHTML = `
+                    <div class="ax-report-card">
+                        <span class="section-label">REPORT ENGINE</span>
+                        <h3>Attendance reporting is online.</h3>
+                        <p>
+                            Student-wise calculations include classes conducted,
+                            classes attended, absences, percentage and shortage status.
+                        </p>
+                        <div class="ax-report-status">
+                            <span class="status-dot"></span>
+                            REPORT API READY
+                        </div>
+                    </div>
+                `;
+            }
+
+        } catch (error) {
+            body.innerHTML = `
+                <div class="ax-error">
+                    <strong>Unable to load ${tab}</strong>
+                    <span>${error.message}</span>
+                </div>
+            `;
+        }
+    }
+
+    function addCommandCenterStyles() {
+        if (document.getElementById("attendx-final-styles")) return;
+
+        const style = document.createElement("style");
+        style.id = "attendx-final-styles";
+
+        style.textContent = `
+            .attendx-command-center {
+                margin-top: 24px;
+                border: 1px solid rgba(255,255,255,.10);
+                background: rgba(12,12,14,.72);
+                backdrop-filter: blur(24px);
+                border-radius: 24px;
+                padding: 24px;
+                box-shadow: 0 30px 100px rgba(0,0,0,.25);
+            }
+
+            .ax-command-head {
+                display:flex;
+                align-items:flex-start;
+                justify-content:space-between;
+                gap:20px;
+                margin-bottom:22px;
+            }
+
+            .ax-command-head span:first-child {
+                font-size:10px;
+                letter-spacing:.18em;
+                opacity:.55;
+            }
+
+            .ax-command-head h2 {
+                margin:7px 0;
+                font-size:26px;
+            }
+
+            .ax-command-head p {
+                margin:0;
+                opacity:.55;
+                font-size:13px;
+            }
+
+            .ax-live {
+                padding:8px 12px;
+                border:1px solid rgba(255,255,255,.12);
+                border-radius:999px;
+                font-size:10px;
+                letter-spacing:.12em;
+            }
+
+            .ax-tabs {
+                display:flex;
+                flex-wrap:wrap;
+                gap:8px;
+                margin-bottom:22px;
+            }
+
+            .ax-tabs button {
+                border:1px solid rgba(255,255,255,.10);
+                background:rgba(255,255,255,.035);
+                color:inherit;
+                padding:9px 13px;
+                border-radius:10px;
+                cursor:pointer;
+                transition:.2s ease;
+            }
+
+            .ax-tabs button:hover,
+            .ax-tabs button.active {
+                background:rgba(255,255,255,.12);
+                transform:translateY(-1px);
+            }
+
+            .ax-overview-grid {
+                display:grid;
+                grid-template-columns:repeat(4,1fr);
+                gap:12px;
+            }
+
+            .ax-mini-card {
+                padding:20px;
+                min-height:120px;
+                border:1px solid rgba(255,255,255,.08);
+                border-radius:17px;
+                background:rgba(255,255,255,.025);
+            }
+
+            .ax-mini-card small {
+                display:block;
+                font-size:9px;
+                letter-spacing:.15em;
+                opacity:.5;
+                margin-bottom:12px;
+            }
+
+            .ax-mini-card strong {
+                display:block;
+                font-size:24px;
+                margin-bottom:6px;
+            }
+
+            .ax-mini-card span {
+                font-size:11px;
+                opacity:.45;
+            }
+
+            .ax-section-title {
+                display:flex;
+                justify-content:space-between;
+                align-items:center;
+                margin-bottom:15px;
+            }
+
+            .ax-section-title small {
+                font-size:9px;
+                letter-spacing:.14em;
+                opacity:.45;
+            }
+
+            .ax-section-title h3 {
+                margin-top:4px;
+            }
+
+            .ax-action {
+                border:1px solid rgba(255,255,255,.12);
+                background:rgba(255,255,255,.08);
+                color:inherit;
+                padding:9px 13px;
+                border-radius:10px;
+                cursor:pointer;
+            }
+
+            .ax-table {
+                border:1px solid rgba(255,255,255,.08);
+                border-radius:15px;
+                overflow:hidden;
+            }
+
+            .ax-row {
+                display:grid;
+                grid-template-columns:repeat(3,1fr);
+                gap:12px;
+                padding:13px 15px;
+                border-bottom:1px solid rgba(255,255,255,.06);
+                font-size:12px;
+            }
+
+            .ax-row:last-child {
+                border-bottom:0;
+            }
+
+            .ax-row.ax-head {
+                font-size:9px;
+                letter-spacing:.12em;
+                opacity:.5;
+            }
+
+            .ax-empty,
+            .ax-loading {
+                padding:28px;
+                text-align:center;
+                opacity:.5;
+                font-size:12px;
+            }
+
+            .ax-report-card {
+                padding:28px;
+                border:1px solid rgba(255,255,255,.08);
+                border-radius:18px;
+                background:rgba(255,255,255,.025);
+            }
+
+            .ax-report-card h3 {
+                margin:10px 0;
+                font-size:22px;
+            }
+
+            .ax-report-card p {
+                max-width:700px;
+                opacity:.55;
+                line-height:1.7;
+            }
+
+            .ax-report-status {
+                margin-top:20px;
+                display:flex;
+                align-items:center;
+                gap:8px;
+                font-size:10px;
+                letter-spacing:.1em;
+            }
+
+            .ax-error {
+                padding:22px;
+                border:1px solid rgba(255,80,80,.2);
+                border-radius:15px;
+                display:flex;
+                flex-direction:column;
+                gap:7px;
+            }
+
+            .ax-error span {
+                opacity:.55;
+                font-size:12px;
+            }
+
+            @media(max-width:800px) {
+                .ax-overview-grid {
+                    grid-template-columns:repeat(2,1fr);
+                }
+
+                .ax-command-head {
+                    flex-direction:column;
+                }
+            }
+
+            @media(max-width:520px) {
+                .ax-overview-grid {
+                    grid-template-columns:1fr;
+                }
+
+                .ax-row {
+                    grid-template-columns:1fr;
+                    gap:4px;
+                }
+            }
+        `;
+
+        document.head.appendChild(style);
+    }
+
+    async function initFinalAttendX() {
+        addCommandCenterStyles();
+
+        await loadLiveStats();
+        await loadSystemStatus();
+        await loadActivity();
+
+        createCommandCenter();
+
+        setInterval(() => {
+            loadLiveStats();
+            loadSystemStatus();
+            loadActivity();
+        }, 15000);
+    }
+
+    /*
+       Wait until the existing application has authenticated
+       and revealed the dashboard.
+    */
+    const observer = new MutationObserver(() => {
+        const dashboard = document.getElementById("dashboardPage");
+
+        if (
+            dashboard &&
+            !dashboard.classList.contains("hidden") &&
+            !window.__attendxFinalInitialized
+        ) {
+            window.__attendxFinalInitialized = true;
+            initFinalAttendX();
+        }
+    });
+
+    observer.observe(document.body, {
+        subtree: true,
+        attributes: true,
+        attributeFilter: ["class"]
+    });
+
+})();
+
+
+/* ============================================================
+   ATTENDX ADMIN MANAGEMENT CENTER
+   ============================================================ */
+
+(function () {
+    "use strict";
+
+    let managementData = null;
+    let managementTab = "departments";
+
+    function esc(value) {
+        return String(value ?? "")
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;");
+    }
+
+    async function loadManagement() {
+        const response = await fetch("/api/dashboard/management", {
+            credentials: "same-origin"
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+            throw new Error(data.error || "Unable to load management data");
+        }
+
+        managementData = data;
+        renderManagement();
+    }
+
+    function rowsFor(tab) {
+        if (!managementData) return [];
+
+        return managementData[tab] || [];
+    }
+
+    function renderManagement() {
+        const root = document.getElementById("attendxManagement");
+        if (!root || !managementData) return;
+
+        const rows = rowsFor(managementTab);
+
+        let headers = [];
+        let body = "";
+
+        if (managementTab === "departments") {
+            headers = ["ID", "Name", "Code"];
+            body = rows.map(x => `
+                <tr>
+                    <td>${esc(x.id)}</td>
+                    <td>${esc(x.name)}</td>
+                    <td>${esc(x.code)}</td>
+                </tr>
+            `).join("");
+        }
+
+        if (managementTab === "classes") {
+            headers = ["ID", "Class", "Department", "Year", "Semester", "Section"];
+            body = rows.map(x => `
+                <tr>
+                    <td>${esc(x.id)}</td>
+                    <td>${esc(x.name)}</td>
+                    <td>${esc(x.department_code || x.department_name)}</td>
+                    <td>${esc(x.year)}</td>
+                    <td>${esc(x.semester)}</td>
+                    <td>${esc(x.section)}</td>
+                </tr>
+            `).join("");
+        }
+
+        if (managementTab === "subjects") {
+            headers = ["ID", "Subject", "Code", "Department"];
+            body = rows.map(x => `
+                <tr>
+                    <td>${esc(x.id)}</td>
+                    <td>${esc(x.name)}</td>
+                    <td>${esc(x.code)}</td>
+                    <td>${esc(x.department_code || x.department_name)}</td>
+                </tr>
+            `).join("");
+        }
+
+        if (managementTab === "faculty") {
+            headers = ["ID", "Employee ID", "Name", "Username", "Department"];
+            body = rows.map(x => `
+                <tr>
+                    <td>${esc(x.id)}</td>
+                    <td>${esc(x.employee_id)}</td>
+                    <td>${esc(x.full_name)}</td>
+                    <td>${esc(x.username)}</td>
+                    <td>${esc(x.department_code || x.department_name)}</td>
+                </tr>
+            `).join("");
+        }
+
+        if (managementTab === "hods") {
+            headers = ["ID", "Name", "Username", "Email", "Status"];
+            body = rows.map(x => `
+                <tr>
+                    <td>${esc(x.id)}</td>
+                    <td>${esc(x.full_name)}</td>
+                    <td>${esc(x.username)}</td>
+                    <td>${esc(x.email || "—")}</td>
+                    <td>${x.is_active ? "ACTIVE" : "DISABLED"}</td>
+                </tr>
+            `).join("");
+        }
+
+        if (managementTab === "students") {
+            headers = ["ID", "Roll Number", "Name", "Username", "Class", "Department"];
+            body = rows.map(x => `
+                <tr>
+                    <td>${esc(x.id)}</td>
+                    <td>${esc(x.roll_number)}</td>
+                    <td>${esc(x.full_name)}</td>
+                    <td>${esc(x.username)}</td>
+                    <td>${esc(x.class_name)}-${esc(x.section)}</td>
+                    <td>${esc(x.department_code || x.department_name)}</td>
+                </tr>
+            `).join("");
+        }
+
+        if (!body) {
+            body = `
+                <tr>
+                    <td colspan="${headers.length}">
+                        <div class="management-empty">
+                            No ${esc(managementTab)} found.
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }
+
+        root.innerHTML = `
+            <div class="management-title">
+                <div>
+                    <span class="section-label">ADMIN / MANAGEMENT CENTER</span>
+                    <h2>Academic control plane</h2>
+                    <span class="management-count">
+                        ${rows.length} ${esc(managementTab)}
+                    </span>
+                </div>
+
+                <button class="management-refresh" id="managementRefresh">
+                    ↻ Refresh
+                </button>
+            </div>
+
+            <div class="management-tabs">
+                ${[
+                    ["departments", "Departments"],
+                    ["classes", "Classes"],
+                    ["subjects", "Subjects"],
+                    ["faculty", "Faculty"],
+                    ["hods", "HOD"],
+                    ["students", "Students"]
+                ].map(([key, label]) => `
+                    <button
+                        class="management-tab ${managementTab === key ? "active" : ""}"
+                        data-management-tab="${key}">
+                        ${label}
+                    </button>
+                `).join("")}
+            </div>
+
+            <div class="management-table-wrap">
+                <table class="management-table">
+                    <thead>
+                        <tr>
+                            ${headers.map(h => `<th>${h}</th>`).join("")}
+                        </tr>
+                    </thead>
+                    <tbody>${body}</tbody>
+                </table>
+            </div>
+        `;
+
+        root.querySelectorAll("[data-management-tab]").forEach(button => {
+            button.addEventListener("click", () => {
+                managementTab = button.dataset.managementTab;
+                renderManagement();
+            });
+        });
+
+        document
+            .getElementById("managementRefresh")
+            ?.addEventListener("click", async () => {
+                try {
+                    await loadManagement();
+                } catch (error) {
+                    console.error(error);
+                    alert(error.message);
+                }
+            });
+    }
+
+    function injectManagementCenter() {
+        const dashboardContent =
+            document.querySelector("#dashboardPage .dashboard-content");
+
+        if (!dashboardContent) return;
+        if (document.getElementById("attendxManagement")) return;
+
+        const section = document.createElement("section");
+        section.id = "attendxManagement";
+        section.className = "management-center";
+
+        dashboardContent.appendChild(section);
+
+        loadManagement().catch(error => {
+            console.error("AttendX management:", error);
+            section.innerHTML = `
+                <div class="management-empty">
+                    Management API unavailable.
+                </div>
+            `;
+        });
+    }
+
+    function start() {
+        const dashboard = document.getElementById("dashboardPage");
+
+        if (!dashboard) return;
+
+        const observer = new MutationObserver(() => {
+            if (!dashboard.classList.contains("hidden")) {
+                injectManagementCenter();
+            }
+        });
+
+        observer.observe(dashboard, {
+            attributes: true,
+            attributeFilter: ["class"]
+        });
+
+        if (!dashboard.classList.contains("hidden")) {
+            injectManagementCenter();
+        }
+    }
+
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", start);
+    } else {
+        start();
+    }
+})();
+
+
+
+/* ===== ATTENDX LIVE DASHBOARD ===== */
+
+async function loadLiveDashboard() {
+    try {
+        const response = await fetch("/api/dashboard/stats", {
+            credentials: "same-origin"
+        });
+
+        if (!response.ok) return;
+
+        const data = await response.json();
+
+        if (!data.success) return;
+
+        const statCards = document.querySelectorAll(
+            "#dashboardPage .stat-card"
+        );
+
+        if (statCards.length >= 4) {
+            const values = statCards.map(
+                card => card.querySelector("strong")
+            );
+
+            if (values[0])
+                values[0].textContent = data.students ?? 0;
+
+            if (values[1])
+                values[1].textContent =
+                    `${data.attendance_today ?? 0}%`;
+
+            if (values[2])
+                values[2].textContent = data.classes ?? 0;
+
+            if (values[3])
+                values[3].textContent = "ONLINE";
+        }
+
+    } catch (error) {
+        console.error(
+            "AttendX live dashboard error:",
+            error
+        );
+    }
+}
+
+
+async function loadSystemStatus() {
+    try {
+        const response = await fetch(
+            "/api/dashboard/system",
+            {
+                credentials: "same-origin"
+            }
+        );
+
+        if (!response.ok) return;
+
+        const data = await response.json();
+
+        if (!data.success) return;
+
+        const statusText = document.querySelector(
+            ".dashboard-status span:last-child"
+        );
+
+        if (statusText) {
+            statusText.textContent =
+                `${data.server} • MYSQL ${data.database}`;
+        }
+
+    } catch (error) {
+        console.error(
+            "AttendX system status error:",
+            error
+        );
+    }
+}
+
+
+async function loadLiveActivity() {
+    try {
+        const response = await fetch(
+            "/api/dashboard/activity",
+            {
+                credentials: "same-origin"
+            }
+        );
+
+        if (!response.ok) return;
+
+        const data = await response.json();
+
+        if (!data.success || !Array.isArray(data.data))
+            return;
+
+        const list = document.querySelector(
+            "#dashboardPage .activity-list"
+        );
+
+        if (!list) return;
+
+        if (data.data.length === 0) {
+            list.innerHTML = `
+                <div>
+                    <span>01</span>
+                    <p>
+                        <strong>No activity yet</strong>
+                        <small>
+                            Attendance activity will appear here.
+                        </small>
+                    </p>
+                    <time>WAITING</time>
+                </div>
+            `;
+            return;
+        }
+
+        list.innerHTML = data.data.map(
+            (item, index) => `
+                <div>
+                    <span>${String(index + 1).padStart(2, "0")}</span>
+                    <p>
+                        <strong>
+                            ${item.action || "SYSTEM EVENT"}
+                        </strong>
+                        <small>
+                            ${item.username || "system"}
+                            ${item.new_status
+                                ? " • " + item.new_status
+                                : ""}
+                        </small>
+                    </p>
+                    <time>LOG</time>
+                </div>
+            `
+        ).join("");
+
+    } catch (error) {
+        console.error(
+            "AttendX activity error:",
+            error
+        );
+    }
+}
+
+
+async function loadWeeklyAttendance() {
+    try {
+        const response = await fetch(
+            "/api/dashboard/weekly",
+            {
+                credentials: "same-origin"
+            }
+        );
+
+        if (!response.ok) return;
+
+        const data = await response.json();
+
+        if (!data.success || !Array.isArray(data.data))
+            return;
+
+        const bars = document.querySelectorAll(
+            "#dashboardPage .chart-bars i"
+        );
+
+        data.data.forEach((item, index) => {
+            if (!bars[index]) return;
+
+            const percentage =
+                Number(item.percentage || 0);
+
+            bars[index].style.height =
+                `${Math.max(5, Math.min(100, percentage))}%`;
+        });
+
+    } catch (error) {
+        console.error(
+            "AttendX weekly analytics error:",
+            error
+        );
+    }
+}
+
+
+function startLiveDashboard() {
+    loadLiveDashboard();
+    loadSystemStatus();
+    loadLiveActivity();
+    loadWeeklyAttendance();
+
+    setInterval(loadLiveDashboard, 30000);
+    setInterval(loadSystemStatus, 30000);
+    setInterval(loadLiveActivity, 15000);
+    setInterval(loadWeeklyAttendance, 30000);
+}
+
+
+document.addEventListener(
+    "DOMContentLoaded",
+    () => {
+        startLiveDashboard();
+    }
+);
+
